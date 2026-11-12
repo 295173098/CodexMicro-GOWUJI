@@ -1,4 +1,4 @@
-# GOWUJI Macro Pad · Rev A
+# GOWUJI Macro Pad · Rev A2
 
 受 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 启发的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮和导光件均可自行打印。当前是 **Alpha 样机设计**，尚未做实物验证。
 
@@ -6,7 +6,7 @@
 | --- | --- |
 | PCB、原理图、项目库 | [KiCad 项目](hardware/Gowuji-RevA.kicad_pro)、[PCB](hardware/Gowuji-RevA.kicad_pcb)、[原理图](hardware/Gowuji-RevA.kicad_sch) |
 | BOM | [BOM.csv](hardware/BOM.csv) |
-| 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[装配 STEP](mechanical/fit-reference.step) |
+| 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[轴孔试片](mechanical/mx-fit-coupon.stl)、[装配 STEP](mechanical/fit-reference.step) |
 | 固件和烧录 | [Arduino 工程](firmware/Gowuji/)、[烧录脚本](firmware/flash.py) |
 | Codex 伴侣 | [Python 主机程序](host/gowuji.py) |
 | 制造与验证 | [打样和装配](docs/assembly.md)、[验证记录](docs/validation.md) |
@@ -24,14 +24,14 @@ PCB 上六颗灯靠近对应键位，通过面板导光；六个位置映射到�
 | 第 3 排 | 会话 5 | 会话 6 | 查找 / 分配 | 中止当前回合 |
 | 第 4 排 | 触摸 | 摇杆 | 旋钮 | 层号 |
 
-成本估算约 **¥55–144 / 套**，含小批量摊销裸 PCB 和自打耗材，不含人工、运费、代贴和外置电源。它是采购预算区间，不是实时报价。优先复用 USB 线和 1U 键帽；少量制作时，开发板省去自制 USB 和射频电路的打样迭代。BOM 中低价轴和通用键帽对成本影响最大，替代旋钮和摇杆前应先核对封装。
+成本估算约 **¥58–153 / 套**，含小批量摊销裸 PCB 和自打耗材，不含人工、运费、代贴和外置电源。优先复用 USB 线和 1U 键帽；替代旋钮和摇杆前应先核对封装。Rev A2 已完成仿真和设计检查，建议先打样，量产前必须完成 [USB 与整机首件验证](docs/validation.md)。
 
 本地编译和启动：
 
 ```powershell
 python tools/build_firmware.py --install
 python -m pip install esptool==5.1.0
-python firmware/flash.py COM6 GOWUJI-v0.1.0-alpha.1-flash-0x0.bin
+python firmware/flash.py COM6 GOWUJI-v0.1.0-alpha.2-flash-0x0.bin
 python -m pip install -r host/requirements.txt
 python host/gowuji.py --port COM6 --cwd C:/path/to/project
 ```
@@ -39,3 +39,5 @@ python host/gowuji.py --port COM6 --cwd C:/path/to/project
 上面用的是 Windows 示例端口；macOS/Linux 替换成对应串口路径。无需硬件可用 `python host/gowuji.py --demo` 查看灯状态。语音可选装 `host/requirements-voice.txt`，下载匹配语言的 [Vosk 模型](https://alphacephei.com/vosk/models)，并启动时增加 `--voice-model <模型目录>`。
 
 硬件使用 KiCad 9 打开。修改源数据后可用 `python tools/hardware.py` 更新原理图、BOM、项目库及固件引脚；该命令不会覆写已布线 PCB。若重新布局，`--unrouted build/layout.kicad_pcb` 生成裸布局，再在 KiCad 中布线并另存。用 `python mechanical/generate.py`（CadQuery 2.8）重建机械文件。用 `python tools/export_hardware.py` 重跑检查和制造导出。Release 同时提供可烧录的完整镜像、源码和 Gerber，发布状态见 [AGENTS.md](AGENTS.md)。
+
+在 PCB 编辑器按 `Alt+3` 打开装配预览。`hardware/models/` 内含简化的按键、模块、旋钮和摇杆 STEP，可用 `python mechanical/kicad_models.py` 重建。预览仅显示装有器件的电路板，面板及外壳见机械装配 STEP。

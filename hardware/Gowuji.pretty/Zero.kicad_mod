@@ -21,4 +21,5 @@
 (pad "10" thru_hole circle (at 7.62 14.29) (size 1.8 1.8) (drill 1.05) (layers "*.Cu" "*.Mask")  (uuid "d873b054-3913-56d2-8f01-44bb70affc0d"))
 (pad "9" thru_hole circle (at 7.62 16.83) (size 1.8 1.8) (drill 1.05) (layers "*.Cu" "*.Mask")  (uuid "55fc9666-520f-5bea-91b5-17e602623293"))
 (pad "8" thru_hole circle (at 7.62 19.37) (size 1.8 1.8) (drill 1.05) (layers "*.Cu" "*.Mask")  (uuid "8127b885-6d27-5d38-9340-c70c42fc4d9a"))
-(pad "7" thru_hole circle (at 7.62 21.91) (size 1.8 1.8) (drill 1.05) (layers "*.Cu" "*.Mask")  (uuid "6f40eb82-c533-59aa-ac01-3fc1e644e65a")))
+(pad "7" thru_hole circle (at 7.62 21.91) (size 1.8 1.8) (drill 1.05) (layers "*.Cu" "*.Mask")  (uuid "6f40eb82-c533-59aa-ac01-3fc1e644e65a"))
+(model "${KIPRJMOD}/models/esp32-s3-zero.step" (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0))))

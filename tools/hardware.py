@@ -28,23 +28,39 @@ FP = {
     'Zero': (18,23.5,0,11.75,[th(n,x,1.59+i*2.54,1.05,1.8, n=='5V')
         for x,ns in [(-7.62,L),(7.62,R)] for i,n in enumerate(ns)]),
     'MX': (14,14,0,0,[th(1,-2.54,5.08,1.5,2.2),th(2,3.81,2.54,1.5,2.2),
-        th('',0,0,4),th('',-5.08,0,1.7),th('',5.08,0,1.7)]),
+        th('',0,0,4.1),th('',-5.08,0,1.75),th('',5.08,0,1.75)]),
     'EC11': (12,12,0,0,[th('A',-7.5,-2.5,1,1.9),th('B',-7.5,2.5,1,1.9),
         th('C',-7.5,0,1,1.9),th('S1',7,2.5,1,1.9),th('S2',7,-2.5,1,1.9),
-        th('MP',0,-5.6,2.6,3.2),th('MP',0,5.6,2.6,3.2)]),
+        th('MP',0,-5.6,2.8,3.4),th('MP',0,5.6,2.8,3.4)]),
     'SKRH': (7.35,7.5,0,0,[sm(n,x,y,1.35,1)
         for x,ns in [(-3.575,[1,2,3]),(3.575,[4,5,6])] for y,n in zip([-1.425,0,1.425],ns)]
         +[sm('M1',0,-4.05,2,1.8),sm('M2',0,4.05,2,1.8)]),
     'SOD123': (2.7,1.65,0,0,pair(3.2,1.1,1.3)),
-    'RGB3535': (3.5,3.5,0,0,[sm(n,x,y,1.5,.8)
-        for n,x,y in [(1,-1.64,-.89),(2,-1.64,.89),(3,1.64,.89),(4,1.64,-.89)]]),
+    'RGB3535': (3.5,3.5,0,0,[sm(n,x,y,1.8,1.0)
+        for n,x,y in [(1,-1.565,-.89),(2,-1.565,.89),(3,1.565,.89),(4,1.565,-.89)]]),
     'SOT23_5': (2.9,1.6,0,0,[sm(n,x,y,0.64,1.0) for n,x,y in [
         (1,-.95,1.18),(2,0,1.18),(3,.95,1.18),(4,.95,-1.18),(5,-.95,-1.18)]]),
+    'SOT23_6': (2.9,1.6,0,0,[sm(n,x,y,0.64,1.0) for n,x,y in [
+        (1,-.95,1.18),(2,0,1.18),(3,.95,1.18),(4,.95,-1.18),(5,0,-1.18),(6,-.95,-1.18)]]),
     'R0603': (1.6,.8,0,0,pair(1.55,.9,.95)),
     'C0603': (1.6,.8,0,0,pair(1.55,.9,.95)),
     'C1206': (3.2,1.6,0,0,pair(2.8,1.4,1.75)),
     'Wire': (2.2,2.2,0,0,[th(1,0,0,0.9,2.2)]),
     'Mount': (5.5,5.5,0,0,[th('',0,0,2.4)]),
+}
+
+MODEL_PATHS={
+    'Zero':('local','esp32-s3-zero.step',0),
+    'MX':('local','mx-neutral.step',0),
+    'EC11':('local','ec11.step',0),
+    'SKRH':('local','skrh.step',0),
+    'SOD123':('stock','Diode_SMD.3dshapes/D_SOD-123.step',0),
+    'RGB3535':('stock','LED_SMD.3dshapes/LED_WS2812B-Mini_PLCC4_3.5x3.5mm.step',0),
+    'R0603':('stock','Resistor_SMD.3dshapes/R_0603_1608Metric.step',0),
+    'C0603':('stock','Capacitor_SMD.3dshapes/C_0603_1608Metric.step',0),
+    'C1206':('stock','Capacitor_SMD.3dshapes/C_1206_3216Metric.step',0),
+    'SOT23_5':('stock','Package_TO_SOT_SMD.3dshapes/SOT-23-5.step',-90),
+    'SOT23_6':('stock','Package_TO_SOT_SMD.3dshapes/SOT-23-6.step',-90),
 }
 
 def pad(p, tag, nets=None):
@@ -74,16 +90,23 @@ def footprint(kind, part=None):
     y1=max([y+h/2]+[p[2]+p[4]/2 for p in ps])+.1
     drawings=[f'(fp_rect (start {xy(x-w/2,y-h/2)}) (end {xy(x+w/2,y+h/2)}) (stroke (width 0.1) (type default)) (fill none) (layer "F.Fab"))',
               f'(fp_rect (start {xy(x0,y0)}) (end {xy(x1,y1)}) (stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))']
-    mark={'SOD123':(-2.05,-.98), 'RGB3535':(-2.0,-1.9), 'Zero':(-8.55,-.1),
-          'SOT23_5':(-2.04,1.8), 'SKRH':(-5.4,-1.38)}.get(kind)
+    mark={'SOD123':(-2.05,-.98), 'RGB3535':(1.6,1.9), 'Zero':(-8.55,-.1),
+          'SOT23_5':(-2.04,1.8), 'SOT23_6':(-2.04,1.8), 'SKRH':(-5.4,-1.38)}.get(kind)
     if mark:
         drawings.append(f'(fp_line (start {xy(*mark)}) (end {xy(mark[0]+.55,mark[1])}) (stroke (width 0.15) (type default)) (layer "F.SilkS"))')
     props=[
         f'(property "Reference" {q(ref)} (at {xy(*rpos)} 0) (layer "F.SilkS") {"(hide yes)" if hidden else ""} (effects (font (size 0.8 0.8) (thickness 0.12))))',
         f'(property "Value" {q(val)} (at 0 0 0) (layer "F.Fab") (effects (font (size 0.8 0.8) (thickness 0.12))))']
+    model=[]
+    if kind in MODEL_PATHS:
+        where,path,angle=MODEL_PATHS[kind]
+        if kind=='MX' and part and part.val.startswith('SLOT'):
+            path='mx-agent.step'
+        prefix='${KIPRJMOD}/models/' if where=='local' else '${KICAD9_3DMODEL_DIR}/'
+        model=[f'(model {q(prefix+path)} (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 {angle})))']
     return (f'(footprint {q(name)} '+('' if part else '(version 20241229) (generator "pcbnew") ')+
             f'(layer "F.Cu") {u(tag)} {at} (attr {attr})\n'+'\n'.join(
-        props+drawings+[pad(p,tag,board_nets(part) if part else None) for p in ps])+')')
+        props+drawings+[pad(p,tag,board_nets(part) if part else None) for p in ps]+model)+')')
 def board():
     for kind in FP: put(LIB/(kind+'.kicad_mod'),footprint(kind)+'\n')
     put(PCB/'fp-lib-table','(fp_lib_table (version 7) (lib (name "Gowuji") (type "KiCad") (uri "${KIPRJMOD}/Gowuji.pretty") (options "") (descr "GOWUJI Rev A")))\n')
@@ -91,7 +114,7 @@ def board():
     shapes=[f'(gr_rect (start 0 0) (end {W} {H}) (stroke (width 0.05) (type default)) (fill none) (layer "Edge.Cuts") {u("edge")})']
     for i,(x,y) in enumerate(KEYS):
         shapes.append(f'(gr_text "{NAMES[i]}" (at {xy(x,y-5.3)}) (layer "F.SilkS") (effects (font (size .8 .8) (thickness .13))))')
-    for name,x,y in [('GOWUJI / REV A',19,4.2),('USB / BOOT',82.5,4.2),('TOUCH FOIL',18.4,94),('5-WAY',37.45,95.5),('ENCODER',56.5,96)]:
+    for name,x,y in [('GOWUJI / REV A2',19,4.2),('USB / BOOT',82.5,4.2),('TOUCH FOIL',18.4,96)]:
         shapes.append(f'(gr_text "{name}" (at {xy(x,y)}) (layer "F.SilkS") (effects (font (size 1 1) (thickness .15))))')
     shapes.append('''(zone (net 0) (net_name "") (layers "F.Cu" "B.Cu") (name "Module antenna")
     (hatch edge 0.5) (connect_pads (clearance 0)) (min_thickness .25)
@@ -100,7 +123,7 @@ def board():
     (polygon (pts (xy 61 20) (xy 71 20) (xy 71 27) (xy 61 27))))''')
     return f'''(kicad_pcb (version 20241229) (generator "pcbnew")
  (general (thickness 1.6)) (paper "A4")
- (title_block (title "GOWUJI Macro Pad") (rev "A"))
+ (title_block (title "GOWUJI Macro Pad") (rev "A2"))
  (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (32 "B.Adhes" user) (33 "F.Adhes" user)
   (34 "B.Paste" user) (35 "F.Paste" user) (36 "B.SilkS" user) (37 "F.SilkS" user)
   (38 "B.Mask" user) (39 "F.Mask" user) (40 "Dwgs.User" user) (41 "Cmts.User" user)
@@ -118,11 +141,12 @@ def effect(size=1.27,just='',hide=False):
 def pins(kind):
     nums=list(dict.fromkeys(str(p[0]) for p in FP[kind][4] if p[0]!=''))
     names={'SOD123':['K','A'],'RGB3535':['VDD','DOUT','GND','DIN'],
-           'SOT23_5':['OE','A','GND','Y','VCC'],'SKRH':['A','CENTER','C','B','COM','D','TAB1','TAB2']}
+           'SOT23_5':['OE','A','GND','Y','VCC'],'SOT23_6':['VIN','GND','ON','CT','QOD','VOUT'],
+           'SKRH':['A','CENTER','C','B','COM','D','TAB1','TAB2']}
     groups=[nums[:(len(nums)+1)//2],nums[(len(nums)+1)//2:]]
     if kind=='Zero': groups=[L,R]
     if kind in ('MX','R0603','C0603','C1206','SOD123','Wire'): groups=[nums[:1],nums[1:]]
-    width=5.08 if kind in ('Zero','EC11','RGB3535','SOT23_5','SKRH') else 2.54
+    width=5.08 if kind in ('Zero','EC11','RGB3535','SOT23_5','SOT23_6','SKRH') else 2.54
     out=[]
     for side, group in zip([-1,1],groups):
         for i,num in enumerate(group):
@@ -180,15 +204,17 @@ def schematic():
         objs.append(f'(text {q(s)} (at {xy(x,y)} 0) {effect(size,"left")} {u("text/"+s)})')
     note('01  USB-C controller and touch',22.86,25.4)
     note('02  Six addressable indicators',22.86,116.84)
+    note('05  LED rail soft start',172.72,217.17)
     note('03  Mechanical keys and diode matrix',172.72,25.4)
     note('04  Encoder / 5-way navigation',172.72,142.24)
-    note('Rows active low; columns use internal pull-ups. Only one row drives at a time.',172.72,195.58,1.524)
+    note('Rows active low; R3–R7 pull columns up to V3V3. Only one row drives at a time.',172.72,195.58,1.524)
     note('U1 supplies VBUS from USB-C only. No on-board battery charger.',22.86,104.14,1.524)
     note('SW15 shares ROW3; direction diodes face the opposite way from SW1–SW14 on PCB.',172.72,200.66,1.524)
     note('PCB outline 95 x 98 mm / 2 layers / 1.6 mm. H1–H4 are PCB-only.',22.86,247.65,1.524)
     loc={'U1':(60.96,57.15), 'R2':(60.96,86.36), 'J1':(104.14,86.36),
          'U2':(50.8,137.16),'R1':(109.22,137.16),'SW14':(205.74,165.1),
-         'D14':(248.92,165.1),'SW15':(289.56,165.1),'C7':(48.26,226.06),'C8':(104.14,226.06)}
+         'D14':(248.92,165.1),'SW15':(289.56,165.1),'C7':(48.26,226.06),'C8':(104.14,226.06),
+         'U3':(205.74,240.03),'C9':(254,233.68),'C10':(254,247.65)}
     for i in range(13):
         x=186.69+((i%4)*53.34)
         y=43.18+(i//4)*25.4
@@ -201,6 +227,7 @@ def schematic():
         loc[f'C{i+1}']=(x,y+12.7)
     for i in range(5):
         loc[f'D{i+15}']=(327.66+(i%2)*38.1,151.13+(i//2)*13.97)
+        loc[f'R{i+3}']=(309.88+(i%3)*36.83,226.06+(i//3)*15.24)
     for p in parts:
         if p.kind=='Mount': continue
         x,y=loc[p.ref]
@@ -228,7 +255,7 @@ def schematic():
  {" ".join(f'(pin {q(n)} {u("pin/"+p.ref+"/"+n)})' for n,*_ in ps)}
  (instances (project "Gowuji-RevA" (path "/{sch_id}" (reference {q(p.ref)}) (unit 1)))))''')
     return f'''(kicad_sch (version 20250114) (generator "eeschema") (uuid "{sch_id}")
- (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A"))
+ (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A2"))
  (lib_symbols {" ".join(sym(k,"Gowuji:"+k) for k in used)})
  {chr(10).join(objs)}
  (sheet_instances (path "/" (page "1")))

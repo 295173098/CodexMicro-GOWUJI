@@ -4,6 +4,7 @@ release/
 __pycache__/
 *.pyc
 *.kicad_prl
+*.lck
 *-backups/
 fp-info-cache
 host/settings.local.json

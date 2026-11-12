@@ -1,10 +1,14 @@
+#ifdef GOWUJI_HOST_SIM
+#include "sim_hal.h"
+#else
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <USB.h>
 #include <USBCDC.h>
 #include <USBHIDKeyboard.h>
-#include "pins.h"
 #include "ble_keys.h"
+#endif
+#include "pins.h"
 
 USBHIDKeyboard keyboard;
 USBCDC consolePort;
@@ -93,7 +97,7 @@ void readMatrix(uint32_t now) {
   for (uint8_t r = 0; r < 4; ++r) {
     digitalWrite(ROWS[r], LOW);
     pinMode(ROWS[r], OUTPUT);
-    delayMicroseconds(12);
+    delayMicroseconds(25);  // Allow a released column to rise through its 22k pull-up.
     for (uint8_t c = 0; c < 5; ++c) {
       int i = MATRIX[r][c];
       if (i >= 0) sample(i, digitalRead(COLS[c]) == LOW, now);
@@ -148,6 +152,7 @@ void command(const char *s, uint32_t now) {
     alive = now;
     consolePort.println("OK GOWUJI/1");
     emit("PROFILE",layer);
+    emit("PTT_STATE",key[3].stable);
   } else if (host && strcmp(s,"PING") == 0) {
     alive = now;
     consolePort.println("PONG");
@@ -195,7 +200,7 @@ void display(uint32_t now) {
 
 void setup() {
   for (auto r: ROWS) pinMode(r,INPUT);
-  for (auto c: COLS) pinMode(c,INPUT_PULLUP);
+  for (auto c: COLS) pinMode(c,INPUT);
   // Hold the encoder's push switch during reset to choose BLE for this boot.
   digitalWrite(ROWS[2],LOW);
   pinMode(ROWS[2],OUTPUT);
@@ -208,11 +213,12 @@ void setup() {
   pixels.begin();
   pixels.setBrightness(45);
   pixels.clear();
-  pixels.show();
   USB.productName("GOWUJI Macro Pad");
   USB.manufacturerName("GOWUJI DIY");
+  USB.usbPower(500);
   keyboard.begin();
   consolePort.begin(115200);
+  consolePort.setTxTimeoutMs(2);  // Do not let a stalled host block matrix scans for 250 ms.
   USB.begin();
   if (wireless) BleKeys::start();
   uint64_t total = 0;
@@ -221,6 +227,7 @@ void setup() {
     delay(6);
   }
   touchBaseline = total / 24;
+  pixels.show();  // First update after the separate LED rail has ramped.
   uint32_t now = millis();
   for (auto &k: key) k.changed = now;
 }

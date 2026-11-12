@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version",default="v0.1.0-alpha.1")
+    parser.add_argument("--version",default="v0.1.0-alpha.2")
+    parser.add_argument("--include-simulation",action="store_true")
     args=parser.parse_args()
     if not args.version or not all(c.isalnum() or c in ".-" for c in args.version):
         parser.error("invalid version")
@@ -49,6 +50,12 @@ def main():
     with zipfile.ZipFile(review,"w",zipfile.ZIP_DEFLATED) as z:
         for path in reports+reviews+[ROOT/"hardware"/"BOM.csv"]:
             z.write(path,path.name)
+        if args.include_simulation:
+            preview=build/"review"/"GOWUJI-RevA2-3D.png"
+            z.write(preview,preview.name)
+            for filename in ("results.json","pcb-metrics.json","power-A1.cir","power-A2.cir",
+                             "matrix-A2-corner.cir","usb-attach.png"):
+                z.write(build/"simulation"/filename,f"simulation/{filename}")
     (out/"SHA256SUMS.txt").write_text("".join(
         f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in [merged,source,fab,review]),
         encoding="ascii")

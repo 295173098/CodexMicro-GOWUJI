@@ -6,8 +6,9 @@ ROOT = Path(__file__).resolve().parents[1]
 W, H = 95, 98
 MOUNT = [(4, 4), (91, 4), (4, 94), (91, 94)]
 XS = [18.4 + 19.05*i for i in range(4)]
-YS = [31 + 19.05*i for i in range(4)]
-TOUCH, JOY, ENC = [(x, YS[3]) for x in XS[:3]]
+YS = [33.30 + 19.05*i for i in range(4)]
+TOUCH, JOY = [(x, YS[3]) for x in XS[:2]]
+ENC = (XS[2], YS[3]-1.4)
 MCU = (66.025, 0.25)
 NAMES = ('SLOT1 SLOT2 NEW_CHAT PTT SLOT3 SLOT4 ACCEPT DECLINE '
          'SLOT5 SLOT6 FIND INTERRUPT LAYER DIAL_PUSH '
@@ -34,7 +35,7 @@ def add(ref,val,kind,xy,**nets):
 def pn(*nets):
     return {str(i+1): n for i,n in enumerate(nets)}
 
-m = {'5V':'VBUS','GND':'GND','1':'ENC_A','2':'ENC_B',
+m = {'5V':'VBUS','GND':'GND','3V3':'V3V3','1':'ENC_A','2':'ENC_B',
      str(TOUCH_PIN):'TOUCH_MCU',str(LED_PIN):'LED_GPIO'}
 m.update({str(pin):f'ROW{i}' for i,pin in enumerate(ROWS)})
 m.update({str(pin):f'COL{i}' for i,pin in enumerate(COLS)})
@@ -54,9 +55,9 @@ for row, line in enumerate(MATRIX):
                 **{'A':'ENC_A','B':'ENC_B','C':'GND','S1':colnet,'S2':'K14','MP':'GND'})
             dxy = (ENC[0]+8.7,ENC[1]-9.3)
         else:
-            dxy = (JOY[0]-9.5+(i-14)*4.75,JOY[1]-8.3)
+            dxy = (JOY[0]-9.5+(i-14)*4.75,JOY[1]-9.9)
         # Active row low; column input pull-up. K/cathode on pin 1.
-        add(f'D{i+1}','1N4148W','SOD123',dxy,**pn(rownet,f'K{i+1}'))
+        add(f'D{i+1}','BAT46W-7-F','SOD123',dxy,**pn(rownet,f'K{i+1}'))
 
 # Rotating the printed cap 45 degrees marks the physical diagonal directions.
 # Drawing #1 terminal names A,B,C,D map to up,right,left,down in firmware.
@@ -68,30 +69,39 @@ for i, p in enumerate(parts):
         parts[i] = Part(p.ref,p.val,p.kind,p.xy,pn(f'K{j+15}',f'COL{j}'))
 add('SW15','SKRHAAE010','SKRH',JOY,**pn('K15','K19','K18','K16','ROW3','K17'))
 
-add('U2','SN74AHCT1G125DBVR','SOT23_5',(24,11),**pn('GND','LED_GPIO','GND','LED_BUF','VBUS'))
+add('U2','SN74LV1T125DBVR','SOT23_5',(24,11),**pn('GND','LED_GPIO','GND','LED_BUF','LED_5V'))
+add('U3','TPS22918DBVR','SOT23_6',(52,9),**pn('VBUS','GND','V3V3','LED_CT',None,'LED_5V'))
 add('R1','330R','R0603',(20,15),**pn('LED_BUF','PIX0'))
 add('R2','1k','R0603',(12,84),**pn('TOUCH_MCU','TOUCH_FOIL'))
+for i in range(5):
+    add(f'R{i+3}','22k','R0603',(79.4,7+i*3.1),**pn('V3V3',f'COL{i}'))
 add('J1','Touch foil wire','Wire',TOUCH,**pn('TOUCH_FOIL'))
 for i,(x,y) in enumerate(LEDS):
-    add(f'LED{i+1}','WS2812B-Mini','RGB3535',(x,y),**pn('VBUS',f'PIX{i+1}' if i<5 else None,'GND',f'PIX{i}'))
-    add(f'C{i+1}','100n','C0603',(x+4.6,y+1.4),**pn('VBUS','GND'))
-add('C7','100n','C0603',(28,10),**pn('VBUS','GND'))
-add('C8','47u 10V','C1206',(31,13),**pn('VBUS','GND'))
+    add(f'LED{i+1}','WS2812B-MINI-V6','RGB3535',(x,y),**pn('LED_5V',f'PIX{i+1}' if i<5 else None,'GND',f'PIX{i}'))
+    add(f'C{i+1}','100n','C0603',(x+4.6,y+1.4),**pn('LED_5V','GND'))
+add('C7','100n','C0603',(28,10),**pn('LED_5V','GND'))
+add('C8','47u 10V','C1206',(45.5,7.5),**pn('LED_5V','GND'))
+add('C9','4.7n C0G','C0603',(51.5,5.0),**pn('LED_CT','GND'))
+add('C10','1u 16V','C0603',(54,13.0),**pn('VBUS','GND'))
 for i, xy in enumerate(MOUNT,1):
     add(f'H{i}','M2','Mount',xy)
 
 BOM = [
     ('U1',1,'Waveshare ESP32-S3-Zero-M (4 MB / 2 MB)','with 2x9 male headers',19,28),
-    ('U2',1,'TI SN74AHCT1G125DBVR','SOT-23-5; not HC',0.5,2),
+    ('U2',1,'TI SN74LV1T125DBVR','SOT-23-5; 1.8–5.5 V translator',0.7,2.5),
+    ('U3',1,'TI TPS22918DBVR','SOT-23-6; 5 V LED rail load switch',1.5,5),
     ('SW1-SW13',13,'MX-compatible 3-pin or 5-pin switches','solder type; one switch per key',0.65,1.5),
     ('SW14',1,'ALPS EC11E15244G1','push encoder; confirm drawing / D shaft',5,12),
     ('SW15',1,'ALPS SKRHAAE010','no guide bosses; verify footprint before substituting',5,16),
-    ('D1-D19',19,'1N4148W','SOD-123',0.04,0.16),
-    ('LED1-LED6',6,'Worldsemi WS2812B-Mini','3535; 1 VDD / 2 DOUT / 3 GND / 4 DIN',0.3,0.9),
+    ('D1-D19',19,'Diodes Inc. BAT46W-7-F','SOD-123; low forward drop Schottky',0.08,0.30),
+    ('LED1-LED6',6,'Worldsemi WS2812B-MINI-V6','3535; verify MINI-V6 (no X1 suffix)',0.3,0.9),
     ('R1',1,'330 ohm','0603',0.02,0.1),
     ('R2',1,'1 kohm','0603',0.02,0.1),
+    ('R3-R7',5,'22 kohm ±1%','0603; matrix column pull-ups',0.02,0.1),
     ('C1-C7',7,'100 nF X7R 16 V','0603',0.04,0.12),
     ('C8',1,'47 uF X5R 10 V','1206; ceramic',0.3,1),
+    ('C9',1,'4.7 nF C0G 50 V','0603; load-switch slew-rate capacitor',0.04,0.2),
+    ('C10',1,'1 uF X7R 16 V','0603; load-switch input bypass',0.05,0.2),
     ('PCB',1,'2-layer FR4 1.6 mm','95 x 98 mm; bare PCB; per board in small batch',5,20),
     ('CAPS',13,'MX 1U keycaps','buy one generic set / loose caps',0.35,1.2),
     ('PRINT',1,'PLA/PETG + translucent material','base, plate, knobs; material only',4,10),

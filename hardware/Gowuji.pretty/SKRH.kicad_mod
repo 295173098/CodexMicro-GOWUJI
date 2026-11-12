@@ -11,4 +11,5 @@
 (pad "5" smd rect (at 3.575 0) (size 1.35 1)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "24ac6202-4ed1-59e5-bedf-8c17272c1c7d"))
 (pad "6" smd rect (at 3.575 1.425) (size 1.35 1)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "89f777b4-442c-5131-805b-c41437845d5b"))
 (pad "M1" smd rect (at 0 -4.05) (size 2 1.8)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "f327081c-5503-5729-985a-d501c72fb88b"))
-(pad "M2" smd rect (at 0 4.05) (size 2 1.8)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "1bfc2f8f-3d0a-5ccb-bb36-6d403fdffa60")))
+(pad "M2" smd rect (at 0 4.05) (size 2 1.8)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "1bfc2f8f-3d0a-5ccb-bb36-6d403fdffa60"))
+(model "${KIPRJMOD}/models/skrh.step" (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0))))

@@ -4,4 +4,5 @@
 (fp_rect (start -0.8 -0.4) (end 0.8 0.4) (stroke (width 0.1) (type default)) (fill none) (layer "F.Fab"))
 (fp_rect (start -1.325 -0.575) (end 1.325 0.575) (stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))
 (pad "1" smd rect (at -0.775 0) (size 0.9 0.95)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "d7a1376e-de57-518b-b3e7-2e9c0e35bb95"))
-(pad "2" smd rect (at 0.775 0) (size 0.9 0.95)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "89ae24fa-bef2-51af-b936-ede6faa54f3f")))
+(pad "2" smd rect (at 0.775 0) (size 0.9 0.95)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "89ae24fa-bef2-51af-b936-ede6faa54f3f"))
+(model "${KICAD9_3DMODEL_DIR}/Capacitor_SMD.3dshapes/C_0603_1608Metric.step" (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0))))

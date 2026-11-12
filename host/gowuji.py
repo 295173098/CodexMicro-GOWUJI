@@ -387,6 +387,11 @@ class Window:
                 self.profile = value
                 self.status.set(f"Keypad profile {self.profile+1}")
             return
+        if name == "PTT_STATE":
+            # Reconcile a lost release packet; a heartbeat can never start recording.
+            if not value and self.voice and self.voice.stream:
+                self.voice.end()
+            return
         if name == "PTT":
             if self.voice:
                 try: self.voice.begin(self.selected) if value else self.voice.end()
