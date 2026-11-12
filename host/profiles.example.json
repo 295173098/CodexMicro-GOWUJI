@@ -1,0 +1,14 @@
+[
+  {},
+  {
+    "JOY_UP": {"prompt": "Review the tests around this change and identify gaps."},
+    "JOY_RIGHT": {"prompt": "Explain the design tradeoffs in this module: "},
+    "JOY_DOWN": {"prompt": "Suggest improvements to the documentation for: "},
+    "JOY_LEFT": "FIND",
+    "DIAL_PUSH": "NONE"
+  },
+  {},
+  {},
+  {},
+  {}
+]

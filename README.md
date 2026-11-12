@@ -1,0 +1,41 @@
+# GOWUJI Macro Pad · Rev A
+
+受 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 启发的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮和导光件均可自行打印。当前是 **Alpha 样机设计**，尚未做实物验证。
+
+| 交付 | 文件 |
+| --- | --- |
+| PCB、原理图、项目库 | [KiCad 项目](hardware/Gowuji-RevA.kicad_pro)、[PCB](hardware/Gowuji-RevA.kicad_pcb)、[原理图](hardware/Gowuji-RevA.kicad_sch) |
+| BOM | [BOM.csv](hardware/BOM.csv) |
+| 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[装配 STEP](mechanical/fit-reference.step) |
+| 固件和烧录 | [Arduino 工程](firmware/Gowuji/)、[烧录脚本](firmware/flash.py) |
+| Codex 伴侣 | [Python 主机程序](host/gowuji.py) |
+| 制造与验证 | [打样和装配](docs/assembly.md)、[验证记录](docs/validation.md) |
+
+有线模式使用标准 USB HID 键盘；打开伴侣应用并连接 USB 串口后，按键事件改由伴侣处理。按住旋钮再按复位，选择本次开机使用 BLE HID。无线模式需要通过 USB-C 外接 5 V 电源；Rev A 无电池、充电器和无线状态灯同步。普通开机恢复 USB HID。蓝牙配对和 USB 真机枚举尚未验证。
+
+伴侣应用启动独立的 [Codex App Server](https://learn.chatgpt.com/docs/app-server)，不用原厂 VID/PID 或专有协议。它管理自己启动或接入的聊天；不能保证追踪官方桌面应用里正在运行的聊天，也不会出现在原厂设备配置页。旋钮选择下一次发送使用的推理强度，摇杆把提示词填入输入框。语音使用电脑麦克风及本地 Vosk 模型。语音和摇杆都只填入草稿，由用户点发送。按键接受/拒绝只对当前会话中已经显示的命令或文件审批有效。
+
+PCB 上六颗灯靠近对应键位，通过面板导光；六个位置映射到伴侣的聊天槽。状态为：无分配熄灭、空闲白、运行蓝、完成绿、待输入黄、错误红。触摸片和第 13 键切换六个配置层。传入 `--profiles host/profiles.example.json` 可替换每层的摇杆提示词和部分命令键；标准 HID 模式保持固定键值。
+
+| 位置 | 第 1 列 | 第 2 列 | 第 3 列 | 第 4 列 |
+| --- | --- | --- | --- | --- |
+| 第 1 排 | 会话 1 | 会话 2 | 新聊天 | 按住说话 |
+| 第 2 排 | 会话 3 | 会话 4 | 接受 | 拒绝 |
+| 第 3 排 | 会话 5 | 会话 6 | 查找 / 分配 | 中止当前回合 |
+| 第 4 排 | 触摸 | 摇杆 | 旋钮 | 层号 |
+
+成本估算约 **¥55–144 / 套**，含小批量摊销裸 PCB 和自打耗材，不含人工、运费、代贴和外置电源。它是采购预算区间，不是实时报价。优先复用 USB 线和 1U 键帽；少量制作时，开发板省去自制 USB 和射频电路的打样迭代。BOM 中低价轴和通用键帽对成本影响最大，替代旋钮和摇杆前应先核对封装。
+
+本地编译和启动：
+
+```powershell
+python tools/build_firmware.py --install
+python -m pip install esptool==5.1.0
+python firmware/flash.py COM6 GOWUJI-v0.1.0-alpha.1-flash-0x0.bin
+python -m pip install -r host/requirements.txt
+python host/gowuji.py --port COM6 --cwd C:/path/to/project
+```
+
+上面用的是 Windows 示例端口；macOS/Linux 替换成对应串口路径。无需硬件可用 `python host/gowuji.py --demo` 查看灯状态。语音可选装 `host/requirements-voice.txt`，下载匹配语言的 [Vosk 模型](https://alphacephei.com/vosk/models)，并启动时增加 `--voice-model <模型目录>`。
+
+硬件使用 KiCad 9 打开。修改源数据后可用 `python tools/hardware.py` 更新原理图、BOM、项目库及固件引脚；该命令不会覆写已布线 PCB。若重新布局，`--unrouted build/layout.kicad_pcb` 生成裸布局，再在 KiCad 中布线并另存。用 `python mechanical/generate.py`（CadQuery 2.8）重建机械文件。用 `python tools/export_hardware.py` 重跑检查和制造导出。Release 同时提供可烧录的完整镜像、源码和 Gerber，发布状态见 [AGENTS.md](AGENTS.md)。

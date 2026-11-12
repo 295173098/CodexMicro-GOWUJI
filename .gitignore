@@ -1,0 +1,11 @@
+.local/
+build/
+release/
+__pycache__/
+*.pyc
+*.kicad_prl
+*-backups/
+fp-info-cache
+host/settings.local.json
+logs/
+freerouting.json
