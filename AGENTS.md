@@ -26,3 +26,6 @@
 - 2026-11-13（第 8 轮，板载麦克风）：Rev A4 增加 U4 MP34DT06JTR（C503097），GPIO3 时钟、GPIO43 数据及串阻/去耦；顶面左上 Ø1.6 mm 拾音孔，使用泡棉环连接面板与麦克风。键位和双层板轮廓沿用 A3，BOM 估算 ¥63–170/套（新增 ¥3–10，不含贴装）。USB 模式需伴侣加载 Vosk，按住双触点 2U 键录音，松键后在本地转写到草稿；空闲、断线和 BLE 模式均不采样，单段最长 60 秒。A3 可用 `--mic computer`。
 - A4 KiCad ERC/DRC/原理图一致性均 0；524,288 键态穷举及 8 个 STL 闭合检查通过，ESP32-S3 固件编译、USB/BLE 主机模拟和伴侣音频解析测试通过。ngspice 每版 129 个工况，A4 接入电荷 38.5–96.6 µC，模型最大过冲约 6.02 V，LED 最低 4.357 V。**仅限工程样机**：按 `docs/validation.md` 实测热插拔、挂起、PDM 波形、装壳拾音及首件配合后再决定量产。
 - A4 本地候选 `release/v0.1.0-alpha.4/`，含源码、固件、Gerber、仿真与校验文件。带壳 KiCad 渲染 `build/review/GOWUJI-RevA4-assembled.png`，可打开 `build/review/assembly-preview-a4.kicad_pcb` 按 Alt+3 查看。未推送 GitHub、未创建远程标签或 Release，发布仍须用户明确同意。
+
+- 2026-11-13（第 9 轮，正反面外观）：根据用户给的原厂参考照片，增加独立 A4 外观选件。正面改圆角边框、内嵌面板、浅凹键帽、触摸标记、低 USB 盖；背面加浅边线和 Ø76 mm 单独打印圆盘，圆盘中央图标凹刻约 0.65 mm。外壳底边延长 1.8 mm 以避开末排按键，PCB、固件和原 A4 候选包未改。12 个新 STL 网格闭合，CAD 检查 4 mm 键程、USB 插头、拾音孔、圆盘及安装位无干涉，实物公差与材料质感仍待验证。
+- 外观选件源码 `mechanical/appearance.py`，复现和打印说明 `docs/appearance.md`，验证和 KiCad 渲染用 `tools/review_appearance.py`。本地 `build/appearance/` 含 `front.png`、`rear.png`、`appearance-preview.kicad_pcb`、打印与 STEP 压缩包 `GOWUJI-A4-appearance.zip`。未上传 GitHub 或发布 Release。
