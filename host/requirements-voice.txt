@@ -1,3 +1,2 @@
 -r requirements.txt
-sounddevice>=0.5,<1
 vosk==0.3.45

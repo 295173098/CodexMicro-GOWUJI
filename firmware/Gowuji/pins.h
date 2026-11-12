@@ -3,6 +3,7 @@
 #include <stdint.h>
 constexpr uint8_t ROWS[] = {5,6,7,8}, COLS[] = {9,10,11,12,13};
 constexpr uint8_t ENC_A = 1, ENC_B = 2, TOUCH_PIN = 4, RGB_PIN = 44;
+constexpr uint8_t MIC_CLK_PIN = 3, MIC_DATA_PIN = 43;
 constexpr int8_t MATRIX[4][5] = {{0,1,2,3,4},{5,6,7,8,9},{10,11,12,13,-1},{14,15,16,17,18}};
 constexpr const char *KEY_NAMES[] = {"SLOT1","SLOT2","NEW_CHAT","PTT","SLOT3","SLOT4","ACCEPT","DECLINE","SLOT5","SLOT6","FIND","INTERRUPT","PTT_B","DIAL_PUSH","JOY_UP","JOY_RIGHT","JOY_DOWN","JOY_LEFT","JOY_CENTER"};
 constexpr uint8_t LED_COUNT = 6;

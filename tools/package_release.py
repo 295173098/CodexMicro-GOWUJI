@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version",default="v0.1.0-alpha.3")
+    parser.add_argument("--version",default="v0.1.0-alpha.4")
     parser.add_argument("--include-simulation",action="store_true")
     args=parser.parse_args()
     if not args.version or not all(c.isalnum() or c in ".-" for c in args.version):
@@ -51,10 +51,10 @@ def main():
         for path in reports+reviews+[ROOT/"hardware"/"BOM.csv"]:
             z.write(path,path.name)
         if args.include_simulation:
-            for name in ("GOWUJI-RevA3-3D.png","GOWUJI-RevA3-assembled.png"):
+            for name in ("GOWUJI-RevA4-3D.png","GOWUJI-RevA4-assembled.png"):
                 z.write(build/"review"/name,name)
-            for filename in ("results.json","pcb-metrics.json","power-A1.cir","power-A3.cir",
-                             "matrix-A3-corner.cir","usb-attach.png"):
+            for filename in ("results.json","pcb-metrics.json","power-A1.cir","power-A4.cir",
+                             "matrix-A4-corner.cir","usb-attach.png"):
                 z.write(build/"simulation"/filename,f"simulation/{filename}")
     (out/"SHA256SUMS.txt").write_text("".join(
         f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in [merged,source,fab,review]),

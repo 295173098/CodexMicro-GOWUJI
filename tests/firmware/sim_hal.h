@@ -60,6 +60,13 @@ struct USBCDC {
   explicit operator bool() const { return connected; }
   int available() const { return connected ? int(rx.size()) : 0; }
   int read() { int c=rx.front(); rx.pop_front(); return c; }
+  int tx_room=64;
+  int availableForWrite() const { return connected ? tx_room : 0; }
+  size_t write(const uint8_t *bytes, size_t count) {
+    assert(count<=size_t(availableForWrite()));
+    tx.append(reinterpret_cast<const char *>(bytes),count);
+    return count;
+  }
   void println(const char* str) { tx+=str; tx+="\r\n"; }
   void printf(const char* fmt,...) {
     char b[100];

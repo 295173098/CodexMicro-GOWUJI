@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 
 import pcbnew as p
+from design import MIC
 
 F, B = p.F_Cu, p.B_Cu
 COPPER_OHM_SQUARE = 0.00065  # conservative hot 1 oz / 35 µm copper
@@ -24,7 +25,13 @@ def main():
     min_trace=min(p.ToMM(t.GetWidth()) for t in lines)
     min_via=min(p.ToMM(t.GetDrillValue()) for t in vias)
     min_ring=min(p.ToMM(t.GetWidth(F)-t.GetDrillValue())/2 for t in vias)
-    assert min_trace>=.20 and min_via>=.30 and min_ring>=.15
+    assert min_trace>=.15 and min_via>=.30 and min_ring>=.15
+    # Restrict the smaller 0.15 mm tracks to the MEMS ground ring breakout.
+    for t in lines:
+        if p.ToMM(t.GetWidth()) < .20:
+            assert t.GetNetname() in ("/PDM_CLK","/PDM_DATA","/V3V3")
+            for point in (t.GetStart(),t.GetEnd()):
+                assert abs(p.ToMM(point.x)-MIC[0]) <= 2 and abs(p.ToMM(point.y)-MIC[1]) <= 2.4
     graph=defaultdict(list)
     pads={}
 

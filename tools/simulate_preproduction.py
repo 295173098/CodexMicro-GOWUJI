@@ -12,9 +12,10 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 from design import (ROOT, MATRIX, KEYS, KEY_GRID, LED_KEYS, LEDS, MOUNT, MCU, W, H,
-                    ENC, JOY, TOUCH, XS, YS, PTT_PRIMARY, PTT_SECONDARY)
+                    ENC, JOY, TOUCH, XS, YS, PTT_PRIMARY, PTT_SECONDARY,
+                    MIC, MIC_PORT, MIC_BORE, MIC_BOSS_Z)
 
-CURRENT = "A3"
+CURRENT = "A4"
 
 
 class Vector(c.Structure):
@@ -70,12 +71,16 @@ Rbleed led 0 100k
 Cinput bus 0 1u"""
             else:
                 supply="Rdirect bus led 0.01"
+            # Allow 2 mA equivalent VBUS demand for the 3.3 V mic during capture;
+            # approximate 1.1 uF on the module regulator as an extra input load.
+            mic = "CmicBudget bus 0 1.1u\nImicBudget bus 0 PWL(0 0 44m 0 44.4m 0.002)" if rev==CURRENT else ""
             deck=f"""GOWUJI {rev} USB hot-plug and LED load step
 Vhost host 0 PWL(0 0 20u {v})
 Rcable host inductor {r}
 Lcable inductor bus {l}u
 Cmodule bus 0 {cm}u
 {supply}
+{mic}
 Rledlayout led last {pcb_loop}
 Cled led 0 {cl}u
 Imcu bus 0 PWL(0 0 0.35m 0 0.8m 0.035 44m 0.035 44.4m 0.14)
@@ -146,12 +151,29 @@ Ccol col 0 {cap}p
     return result
 
 
-def matrix_topology(xml):
-    # Derive edges from exported schematic connectivity, not from the ideal key map.
+def read_nets(xml):
     nets={}
     for net in ET.parse(xml).findall("./nets/net"):
         for n in net.findall("node"):
             nets[n.get("ref"),n.get("pin")]=net.get("name").lstrip("/")
+    return nets
+
+
+def mic_topology(nets):
+    expected = {
+        "U4": ("V3V3","GND","PDM_CLK","PDM_DATA","GND"),
+        "R8": ("PDM_CLK","PDM_CLK_MCU"), "R9": ("PDM_DATA_MCU","PDM_DATA"),
+        "C11": ("V3V3","GND"), "C12": ("V3V3","GND"),
+    }
+    for ref, pins in expected.items():
+        for i, name in enumerate(pins,1):
+            assert nets[ref,str(i)] == name, (ref,i)
+    assert nets["U1","3"] == "PDM_CLK_MCU" and nets["U1","43"] == "PDM_DATA_MCU"
+    return dict(expected, module_clock_gpio=3, module_data_gpio=43)
+
+
+def matrix_topology(nets):
+    # Derive edges from exported schematic connectivity, not from the ideal key map.
     def pair(ref,a,b): return nets[ref,a],nets[ref,b]
     diodes=[pair(f"D{i+1}","2","1") for i in range(19)]
     contacts=[pair(f"SW{i+1}","1","2") for i in range(13)]+[pair("SW14","S1","S2")]
@@ -190,6 +212,11 @@ def mechanical_geometry():
     module=geom.block(MCU[0],MCU[1]+11.75,18.3,23.8,8.4,4.5)
     assert plate.intersect(module).solids().size()==0
     assert tray.intersect(module).solids().size()==0
+    mic=geom.block(*MIC,3.1,4.1,6.4,1.12)
+    assert plate.intersect(mic).solids().size()==0
+    assert plate.intersect(geom.cyl(*MIC_PORT,MIC_BORE/2-.01,7.6,4)).solids().size()==0
+    mic_gap=MIC_BOSS_Z-6.4-1.0
+    assert .45 <= mic_gap <= .7
     for x,y in KEYS:
         pin_body=geom.block(x,y,13.8,13.8,9.88,1.55)
         assert plate.intersect(pin_body).solids().size()==0
@@ -230,6 +257,7 @@ def mechanical_geometry():
         assert set(edges.values())=={2},name
         meshes[name]=triangles
     return dict(nominal_usb_web_mm=web,usb_web_after_0p2mm_per_edge_mm=web-.4,
+                microphone_bore_mm=MIC_BORE,microphone_nominal_gasket_gap_mm=round(mic_gap,2),
                 led_window_web_mm=window_web,ptt_adjacent_cap_gap_mm=ptt_side_gap,
                 usb_cover_to_keycap_gap_mm=cover_key_gap,
                 min_header_tail_clearance_mm=clearance,
@@ -251,8 +279,10 @@ def main():
     copper=np.ceil(metrics["max_path_loop_ohm"]*20)/20
     power,curves=sweep_power(spice,args.out,copper)
     logic=sweep_logic(spice,args.out)
-    data=dict(power=power,logic=logic,topology=matrix_topology(args.netlist),mechanical=mechanical_geometry(),
-              production_gate="HOLD: verify USB hot-plug, suspend, and first-article fit in hardware")
+    nets=read_nets(args.netlist)
+    data=dict(power=power,logic=logic,topology=matrix_topology(nets),microphone_wiring=mic_topology(nets),
+              mechanical=mechanical_geometry(),
+              production_gate="HOLD: verify USB hot-plug and suspend, first-article fit and board audio in hardware")
     (args.out/"results.json").write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8")
     if args.plot:
         import matplotlib.pyplot as plt

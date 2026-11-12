@@ -45,6 +45,11 @@ FP = {
     'R0603': (1.6,.8,0,0,pair(1.55,.9,.95)),
     'C0603': (1.6,.8,0,0,pair(1.55,.9,.95)),
     'C1206': (3.2,1.6,0,0,pair(2.8,1.4,1.75)),
+    # ST DS12698 Rev 3, Fig. 12. PCB top view (port is north of centre).
+    'MP34DT06J': (3,4,0,0,[sm(n,x,y,.4,.95) for n,x,y in
+        [(1,.425,.675),(2,.425,-.675),(3,-.425,-.675),(4,-.425,.675)]]
+        +[sm(5,x,0,.35,2.3) for x in (-1.225,1.225)]
+        +[sm(5,0,y,1.3,.35) for y in (-1.725,1.725)]),
     'Wire': (2.2,2.2,0,0,[th(1,0,0,0.9,2.2)]),
     'Mount': (5.5,5.5,0,0,[th('',0,0,2.4)]),
 }
@@ -61,6 +66,7 @@ MODEL_PATHS={
     'C1206':('stock','Capacitor_SMD.3dshapes/C_1206_3216Metric.step',0),
     'SOT23_5':('stock','Package_TO_SOT_SMD.3dshapes/SOT-23-5.step',-90),
     'SOT23_6':('stock','Package_TO_SOT_SMD.3dshapes/SOT-23-6.step',-90),
+    'MP34DT06J':('local','mp34dt06j.step',0),
 }
 
 def pad(p, tag, nets=None):
@@ -91,7 +97,8 @@ def footprint(kind, part=None):
     drawings=[f'(fp_rect (start {xy(x-w/2,y-h/2)}) (end {xy(x+w/2,y+h/2)}) (stroke (width 0.1) (type default)) (fill none) (layer "F.Fab"))',
               f'(fp_rect (start {xy(x0,y0)}) (end {xy(x1,y1)}) (stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))']
     mark={'SOD123':(-2.05,-.98), 'RGB3535':(1.6,1.9), 'Zero':(-8.55,-.1),
-          'SOT23_5':(-2.04,1.8), 'SOT23_6':(-2.04,1.8), 'SKRH':(-5.4,-1.38)}.get(kind)
+          'SOT23_5':(-2.04,1.8), 'SOT23_6':(-2.04,1.8), 'SKRH':(-5.4,-1.38),
+          'MP34DT06J':(.93,2.25)}.get(kind)
     if mark:
         drawings.append(f'(fp_line (start {xy(*mark)}) (end {xy(mark[0]+.55,mark[1])}) (stroke (width 0.15) (type default)) (layer "F.SilkS"))')
     props=[
@@ -116,7 +123,7 @@ def board():
     shapes=[f'(gr_rect (start 0 0) (end {W} {H}) (stroke (width 0.05) (type default)) (fill none) (layer "Edge.Cuts") {u("edge")})']
     for i,(x,y) in enumerate(KEYS):
         shapes.append(f'(gr_text "{NAMES[i]}" (at {xy(x,y-5.3)}) (layer "F.SilkS") (effects (font (size .8 .8) (thickness .13))))')
-    for name,x,y in [('GOWUJI / REV A3',19,4.2),('USB / BOOT',72,4.2),('TOUCH FOIL',18.4,96)]:
+    for name,x,y in [('GOWUJI / REV A4',19,4.2),('USB / BOOT',72,4.2),('TOUCH FOIL',18.4,96)]:
         shapes.append(f'(gr_text "{name}" (at {xy(x,y)}) (layer "F.SilkS") (effects (font (size 1 1) (thickness .15))))')
     shapes.append(f'''(zone (net 0) (net_name "") (layers "F.Cu" "B.Cu") (name "Module antenna")
     (hatch edge 0.5) (connect_pads (clearance 0)) (min_thickness .25)
@@ -125,7 +132,7 @@ def board():
     (polygon (pts (xy {f(MCU[0]-5)} 20) (xy {f(MCU[0]+5)} 20) (xy {f(MCU[0]+5)} 27) (xy {f(MCU[0]-5)} 27))))''')
     return f'''(kicad_pcb (version 20241229) (generator "pcbnew")
  (general (thickness 1.6)) (paper "A4")
- (title_block (title "GOWUJI Macro Pad") (rev "A3"))
+ (title_block (title "GOWUJI Macro Pad") (rev "A4"))
  (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (32 "B.Adhes" user) (33 "F.Adhes" user)
   (34 "B.Paste" user) (35 "F.Paste" user) (36 "B.SilkS" user) (37 "F.SilkS" user)
   (38 "B.Mask" user) (39 "F.Mask" user) (40 "Dwgs.User" user) (41 "Cmts.User" user)
@@ -144,11 +151,12 @@ def pins(kind):
     nums=list(dict.fromkeys(str(p[0]) for p in FP[kind][4] if p[0]!=''))
     names={'SOD123':['K','A'],'RGB3535':['VDD','DOUT','GND','DIN'],
            'SOT23_5':['OE','A','GND','Y','VCC'],'SOT23_6':['VIN','GND','ON','CT','QOD','VOUT'],
-           'SKRH':['A','CENTER','C','B','COM','D','TAB1','TAB2']}
+           'SKRH':['A','CENTER','C','B','COM','D','TAB1','TAB2'],
+           'MP34DT06J':['VDD','L/R','CLK','DOUT','GND']}
     groups=[nums[:(len(nums)+1)//2],nums[(len(nums)+1)//2:]]
     if kind=='Zero': groups=[L,R]
     if kind in ('MX','R0603','C0603','C1206','SOD123','Wire'): groups=[nums[:1],nums[1:]]
-    width=5.08 if kind in ('Zero','EC11','RGB3535','SOT23_5','SOT23_6','SKRH') else 2.54
+    width=5.08 if kind in ('Zero','EC11','RGB3535','SOT23_5','SOT23_6','SKRH','MP34DT06J') else 2.54
     out=[]
     for side, group in zip([-1,1],groups):
         for i,num in enumerate(group):
@@ -213,10 +221,13 @@ def schematic():
     note('U1 supplies VBUS from USB-C only. No on-board battery charger.',22.86,104.14,1.524)
     note('SW15 shares ROW3; direction diodes face the opposite way from SW1–SW14 on PCB.',172.72,200.66,1.524)
     note('PCB outline 95 x 98 mm / 2 layers / 1.6 mm. H1–H4 are PCB-only.',22.86,247.65,1.524)
+    note('06  Board microphone / 2.048 MHz PDM',22.86,259.08)
     loc={'U1':(60.96,57.15), 'R2':(60.96,86.36), 'J1':(104.14,86.36),
          'U2':(50.8,137.16),'R1':(109.22,137.16),'SW14':(205.74,165.1),
          'D14':(248.92,165.1),'SW15':(289.56,165.1),'C7':(48.26,226.06),'C8':(104.14,226.06),
-         'U3':(205.74,240.03),'C9':(254,233.68),'C10':(254,247.65)}
+         'U3':(205.74,240.03),'C9':(254,233.68),'C10':(254,247.65),
+         'U4':(50.8,273.05),'C11':(100.33,273.05),'C12':(137.16,273.05),
+         'R8':(191.77,273.05),'R9':(269.24,273.05)}
     for i in range(13):
         x=186.69+((i%4)*53.34)
         y=43.18+(i//4)*25.4
@@ -257,7 +268,7 @@ def schematic():
  {" ".join(f'(pin {q(n)} {u("pin/"+p.ref+"/"+n)})' for n,*_ in ps)}
  (instances (project "Gowuji-RevA" (path "/{sch_id}" (reference {q(p.ref)}) (unit 1)))))''')
     return f'''(kicad_sch (version 20250114) (generator "eeschema") (uuid "{sch_id}")
- (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A3"))
+ (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A4"))
  (lib_symbols {" ".join(sym(k,"Gowuji:"+k) for k in used)})
  {chr(10).join(objs)}
  (sheet_instances (path "/" (page "1")))
@@ -298,6 +309,7 @@ def main():
 #include <stdint.h>
 constexpr uint8_t ROWS[] = {vals(ROWS)}, COLS[] = {vals(COLS)};
 constexpr uint8_t ENC_A = {ENC_PINS[0]}, ENC_B = {ENC_PINS[1]}, TOUCH_PIN = {TOUCH_PIN}, RGB_PIN = {LED_PIN};
+constexpr uint8_t MIC_CLK_PIN = {MIC_CLK}, MIC_DATA_PIN = {MIC_DATA};
 constexpr int8_t MATRIX[4][5] = {vals([vals(r) for r in MATRIX])};
 constexpr const char *KEY_NAMES[] = {vals([q(n) for n in NAMES])};
 constexpr uint8_t LED_COUNT = {len(LEDS)};

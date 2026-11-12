@@ -62,6 +62,8 @@ def main():
         zero.append((box(x,-8.2,3.6,3.8,2.9,.9),STEEL))
         zero.append((cylinder(x,-8.2,4.5,.85,.5),BLACK))
     save("esp32-s3-zero",zero)
+    save("mp34dt06j",[(box(0,0,0,3,4,.22),BLACK),
+                       (box(0,0,.22,3,4,.78).cut(cylinder(0,.78,.67,.125,.4)),STEEL)])
     save("ec11",[(box(0,0,0,11.7,12,4.5),BLACK),(box(0,0,4.5,11.7,12,2),STEEL),
                  (cylinder(0,0,6.5,3.45,4),STEEL),(cylinder(0,0,10.5,2.9,9.5),STEEL),
                  (cylinder(0,0,13.3,8.8,8.8).edges(">Z").chamfer(.7),STEEL)])

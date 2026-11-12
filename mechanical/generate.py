@@ -4,7 +4,7 @@ import sys
 import cadquery as cq
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
-from design import W,H,MOUNT,KEYS,LEDS,TOUCH,JOY,ENC,MCU,PTT_PRIMARY,PTT_SECONDARY
+from design import W,H,MOUNT,KEYS,LEDS,TOUCH,JOY,ENC,MCU,PTT_PRIMARY,PTT_SECONDARY,MIC,MIC_PORT,MIC_BORE,MIC_BOSS_Z
 
 OUT=Path(__file__).resolve().parent
 M=2.4
@@ -56,6 +56,9 @@ def panel():
     panel=panel.cut(ring)
     for x,y in MOUNT:
         panel=panel.union(cyl(x,y,2.7,6.4,3.6)).cut(cyl(x,y,1.18,6.2,5.4))
+    # The boss ends above the MEMS lid; a compressible foam ring bridges the gap.
+    panel=panel.union(cyl(*MIC_PORT,1.5,MIC_BOSS_Z,2.05))
+    panel=panel.cut(cyl(*MIC_PORT,MIC_BORE/2,MIC_BOSS_Z-.1,3.7))
     return panel
 
 def dial():
@@ -130,16 +133,17 @@ def main():
         if not obj.val().isValid(): raise ValueError(f'Invalid model: {name}')
         cq.exporters.export(obj,str(OUT/(name+'.stl')),tolerance=.03,angularTolerance=.1)
         cq.exporters.export(obj,str(OUT/(name+'.step')))
-    assembly=cq.Assembly(name='GOWUJI Rev A3')
+    assembly=cq.Assembly(name='GOWUJI Rev A4')
     assembly.add(tray,name='base')
     assembly.add(top,name='plate')
     assembly.add(block(W/2,H/2,W,H,4.8,1.6),name='pcb-envelope')
+    assembly.add(block(*MIC,3,4,6.4,1),name='board-microphone-envelope')
     x,y=KEYS[PTT_PRIMARY]
     assembly.add(ptt_cap().translate((x+PTT_PITCH/2,-y,15.6)),name='ptt-cap-2u')
     assembly.add(usb_cover(),name='removable-usb-cover')
     assembly.export(str(OUT/'fit-reference.step'))
     # KiCad places models relative to the top copper surface, here at z=6.4.
-    housing=cq.Assembly(name='GOWUJI A3 housing preview')
+    housing=cq.Assembly(name='GOWUJI A4 housing preview')
     housing.add(tray.translate((0,0,-6.4)),name='base',color=cq.Color(.66,.69,.72))
     housing.add(top.translate((0,0,-6.4)),name='plate',color=cq.Color(.88,.91,.91))
     housing.add(usb_cover().translate((0,0,-6.4)),name='usb-cover',color=cq.Color(.88,.91,.91))

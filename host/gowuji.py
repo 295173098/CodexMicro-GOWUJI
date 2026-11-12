@@ -1,5 +1,7 @@
 """GOWUJI companion: local USB CDC and the Codex CLI app-server over stdio."""
 import argparse
+import base64
+import binascii
 import json
 import os
 from pathlib import Path
@@ -67,12 +69,25 @@ def decode_event(line):
     return (match[1], int(match[2])) if match else None
 
 
+def decode_audio(line):
+    match = re.fullmatch(r"AUD ([0-9]{1,4}) ([A-Za-z0-9+/]{427}=)", line)
+    if match:
+        try:
+            pcm = base64.b64decode(match[2], validate=True)
+        except binascii.Error:
+            return None
+        if len(pcm) == 320 and int(match[1]) < 6000:
+            return int(match[1]), pcm
+    return None
+
+
 class Device:
-    def __init__(self, port, messages):
+    def __init__(self, port, messages, board_mic=False):
         import serial
         self.port = serial.Serial(port, 115200, timeout=.10, write_timeout=.25)
         self.messages = messages
         self.leds = "000000"
+        self.board_mic = board_mic
         self.stop = threading.Event()
         threading.Thread(target=self.run, daemon=True).start()
 
@@ -81,10 +96,13 @@ class Device:
             ready = False
             due = hello_at = 0.0
             line = bytearray()
+            overflow = False
+            supported = False
+            awaiting_mic = 0.0
             while not self.stop.is_set():
                 now = time.monotonic()
                 if now >= hello_at:
-                    self.port.write(b"HELLO GOWUJI/1\n")
+                    self.port.write(b"HELLO GOWUJI/1\n" + (b"MIC ON\n" if self.board_mic else b""))
                     hello_at = now + 1.0
                 if ready and now >= due:
                     self.port.write(f"LED {self.leds}\n".encode())
@@ -92,15 +110,27 @@ class Device:
                 chunk = self.port.read(self.port.in_waiting or 1)
                 for b in chunk:
                     if b == 10:
-                        s = line.decode("ascii", "replace").strip()
+                        s = "" if overflow else line.decode("ascii", "replace").strip()
                         line.clear()
+                        overflow = False
                         if s == "OK GOWUJI/1" and not ready:
                             ready = True
+                            awaiting_mic = now + 2 if self.board_mic else 0
                             self.messages.put(("info","GOWUJI USB connected."))
                         elif ready and (event := decode_event(s)):
+                            if event[0] == "MIC_READY":
+                                supported = True
                             self.messages.put(("key",event))
-                    elif len(line) < 96:
+                        elif ready and self.board_mic and s.startswith("AUD "):
+                            self.messages.put(("audio",decode_audio(s)))
+                    elif len(line) < 448 and not overflow:
                         line.append(b)
+                    else:
+                        overflow = True
+                if awaiting_mic and now >= awaiting_mic:
+                    if not supported:
+                        self.messages.put(("info","No board microphone detected. For Rev A3, restart with --mic computer."))
+                    awaiting_mic = 0
         except OSError as exc:
             self.messages.put(("usb_lost",f"USB disconnected: {exc}"))
         finally:
@@ -154,32 +184,61 @@ def state_led(status, previous=1):
 
 
 class Voice:
-    def __init__(self, model, messages):
-        import sounddevice
+    def __init__(self, model, messages, source):
         import vosk
-        self.sd, self.vosk = sounddevice, vosk
+        self.source, self.vosk = source, vosk
+        if source == "computer":
+            import sounddevice
+            self.sd = sounddevice
         self.model = vosk.Model(str(model))
         self.messages = messages
         self.stream = None
+        self.recording = False
 
     def begin(self, slot):
-        if self.stream is not None:
+        if self.recording:
             return
-        self.frames = []
+        self.frames, self.invalid = [], False
         self.slot = slot
+        if self.source == "board":
+            self.recording = True
+            return
         def capture(data, *_):
             if len(self.frames) < 600:
                 self.frames.append(bytes(data))
         self.stream = self.sd.RawInputStream(samplerate=16000, channels=1, dtype="int16",
                                              blocksize=1600, callback=capture)
-        self.stream.start()
+        try:
+            self.stream.start()
+        except Exception:
+            self.cancel()
+            raise
+        self.recording = True
 
-    def end(self):
-        if self.stream is None:
+    def feed(self, packet):
+        if not self.recording or self.source != "board" or self.invalid:
             return
-        self.stream.close()
-        self.stream = None
+        if packet is None or packet[0] != len(self.frames) or len(self.frames) >= 6000:
+            self.invalid = True
+            return
+        self.frames.append(packet[1])
+
+    def cancel(self):
+        if self.stream is not None:
+            self.stream.close()
+            self.stream = None
+        self.recording = False
+        self.frames = []
+
+    def end(self, complete=True):
+        if not self.recording:
+            return
         frames, slot = self.frames, self.slot
+        valid = complete and not self.invalid
+        self.cancel()
+        if not valid or not frames:
+            self.messages.put(("info","Audio was interrupted." if not valid else "Hold the voice key while speaking."))
+            return
         def decode():
             rec = self.vosk.KaldiRecognizer(self.model,16000)
             texts = []
@@ -244,12 +303,12 @@ class Window:
         self.entry.pack(fill="x",pady=(6,0))
         ttk.Button(frame,text="Send prompt",command=self.send).pack(anchor="e",pady=4)
         ttk.Label(frame,textvariable=self.status,wraplength=810).pack(fill="x")
-        if opts.port:
-            try: self.device = Device(opts.port,self.inbox)
-            except Exception as exc: self.status.set(f"USB: {exc}")
         if opts.voice_model:
-            try: self.voice = Voice(opts.voice_model,self.inbox)
+            try: self.voice = Voice(opts.voice_model,self.inbox,opts.mic)
             except Exception as exc: self.status.set(f"Voice: {exc}")
+        if opts.port:
+            try: self.device = Device(opts.port,self.inbox,bool(self.voice and opts.mic == "board"))
+            except Exception as exc: self.status.set(f"USB: {exc}")
         if not opts.demo:
             try:
                 self.rpc = AppServer(self.inbox,self.cwd)
@@ -389,14 +448,28 @@ class Window:
             return
         if name == "PTT_STATE":
             # Reconcile a lost release packet; a heartbeat can never start recording.
-            if not value and self.voice and self.voice.stream:
-                self.voice.end()
+            if not value and self.voice and self.voice.recording:
+                self.voice.end(complete=self.voice.source == "computer")
+            return
+        if name.startswith("MIC_"):
+            if self.voice and self.voice.source == "board":
+                if name == "MIC_BEGIN" and value:
+                    self.voice.cancel()
+                    self.voice.begin(self.selected)
+                    self.status.set("Recording from GOWUJI…")
+                elif name == "MIC_END":
+                    self.voice.end(complete=bool(value))
+                    self.status.set("Transcribing locally…" if value else "Board microphone recording interrupted.")
+                elif name == "MIC_READY" and not value:
+                    self.status.set("Board microphone needs USB mode. Restart without holding the dial.")
+                elif name == "MIC_ERROR":
+                    self.status.set("Board microphone did not start.")
             return
         if name == "PTT":
-            if self.voice:
+            if self.voice and self.voice.source == "computer":
                 try: self.voice.begin(self.selected) if value else self.voice.end()
                 except Exception as exc: self.status.set(f"Microphone: {exc}")
-            elif value:
+            elif not self.voice and value:
                 self.status.set("Push to talk needs --voice-model. You can type a prompt below.")
             return
         if not value: return
@@ -491,12 +564,14 @@ class Window:
                 elif kind=="key": self.key(*arg)
                 elif kind=="info": self.status.set(arg)
                 elif kind=="usb_lost":
-                    if self.voice and self.voice.stream:
-                        self.voice.stream.close()
-                        self.voice.stream = None
+                    if self.voice: self.voice.cancel()
                     self.status.set(arg)
+                elif kind=="audio":
+                    if self.voice: self.voice.feed(arg)
                 elif kind=="voice":
                     i,text=arg
+                    self.status.set("Transcription added to draft." if text else "No speech recognized.")
+                    if not text: continue
                     if i==self.selected: self.entry.insert("end"," "+text)
                     else: self.drafts[i] += " "+text
             except Exception as exc:
@@ -505,7 +580,7 @@ class Window:
 
     def close(self):
         if self.device: self.device.stop.set()
-        if self.voice and self.voice.stream: self.voice.stream.close()
+        if self.voice: self.voice.cancel()
         if self.rpc: self.rpc.close()
         self.root.destroy()
 
@@ -515,6 +590,7 @@ def main():
     parser.add_argument("--port",help="USB CDC port, e.g. COM6 or /dev/cu.usbmodem1101")
     parser.add_argument("--cwd",default=os.getcwd(),help="Project directory for Codex")
     parser.add_argument("--voice-model",type=Path,help="Local Vosk model folder")
+    parser.add_argument("--mic",choices=("board","computer"),default="board",help="Voice source (default: Rev A4 board microphone)")
     parser.add_argument("--profiles",type=Path,help="JSON map for up to six touch-selectable profiles")
     parser.add_argument("--demo",action="store_true",help="Simulate six LED states; no Codex requests")
     parser.add_argument("--check-cli",action="store_true",help="Check local app-server handshake without starting a chat")

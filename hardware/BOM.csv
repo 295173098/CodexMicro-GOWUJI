@@ -14,6 +14,12 @@ C1-C7,7,100 nF X7R 16 V,0603,0.04,0.12,0.28,0.84
 C8,1,47 uF X5R 10 V,1206; ceramic,0.3,1,0.3,1
 C9,1,4.7 nF C0G 50 V,0603; load-switch slew-rate capacitor,0.04,0.2,0.04,0.2
 C10,1,1 uF X7R 16 V,0603; load-switch input bypass,0.05,0.2,0.05,0.2
+U4,1,ST MP34DT06JTR,C503097; top-port PDM; no wash or coating over inlet,3,9,3,9
+C11,1,100 nF X7R 16 V,0603; microphone bypass,0.04,0.12,0.04,0.12
+C12,1,1 uF X7R 16 V,0603; microphone bypass,0.05,0.2,0.05,0.2
+R8,1,33 ohm,0603; source series resistor on PDM clock,0.02,0.1,0.02,0.1
+R9,1,470 ohm,0603; limits contention at GPIO43 during reset,0.02,0.1,0.02,0.1
+MIC-SEAL,1,"0.8 mm closed-cell foam, ID 1.6 mm / OD 2.8 mm",ring on underside of plate; keep inlet clear,0.1,0.5,0.1,0.5
 PCB,1,2-layer FR4 1.6 mm,95 x 98 mm; bare PCB; per board in small batch,5,20,5,20
 CAPS-A,6,MX 1U frosted translucent keycaps,matte clear or milky PC; 17.9 mm reference width,0.7,2.5,4.2,15.0
 CAPS-C,5,MX 1U opaque command caps,add optional icon decals,0.35,1.2,1.75,6.0
@@ -21,4 +27,4 @@ PRINT,1,PLA/PETG + translucent material,"base, plate, knobs, light pipes and dua
 SCREWS,4,M2x10 pan-head screws,self-tap into printed pilot holes,0.1,0.35,0.4,1.4
 FOIL,1,Copper adhesive foil + thin wire,14 mm square + 50 mm wire,0.2,1,0.2,1
 USB,1,USB-C data cable,reuse an existing cable,0,8,0,8
-TOTAL,,Planning estimate,"Excludes labor, shipping and PCBA",,,59.83,159.44
+TOTAL,,Planning estimate,"Excludes labor, shipping and PCBA",,,63.06,169.46

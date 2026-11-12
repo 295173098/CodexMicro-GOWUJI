@@ -1,4 +1,4 @@
-"""Shared Rev A3 placement, pins and netlist. Units: mm; XY from PCB top left."""
+"""Shared Rev A4 placement, pins and netlist. Units: mm; XY from PCB top left."""
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -10,6 +10,12 @@ YS = [33.30 + 19.05*i for i in range(4)]
 TOUCH, JOY = (XS[0],YS[3]), (XS[3],YS[0])
 ENC = (XS[0], YS[0])
 MCU = ((XS[1]+XS[2])/2, 0.25)
+MIC = (13,11)
+MIC_PORT_OFFSET = (0,-.78)  # ST DS12698 Fig. 11, rotated to match Fig. 12
+MIC_PORT = tuple(a+b for a,b in zip(MIC,MIC_PORT_OFFSET))
+MIC_BORE = 1.6
+MIC_BOSS_Z = 8.0
+MIC_CLK, MIC_DATA = 3,43
 NAMES = ('SLOT1 SLOT2 NEW_CHAT PTT SLOT3 SLOT4 ACCEPT DECLINE '
          'SLOT5 SLOT6 FIND INTERRUPT PTT_B DIAL_PUSH '
          'JOY_UP JOY_RIGHT JOY_DOWN JOY_LEFT JOY_CENTER').split()
@@ -39,7 +45,8 @@ def pn(*nets):
     return {str(i+1): n for i,n in enumerate(nets)}
 
 m = {'5V':'VBUS','GND':'GND','3V3':'V3V3','1':'ENC_A','2':'ENC_B',
-     str(TOUCH_PIN):'TOUCH_MCU',str(LED_PIN):'LED_GPIO'}
+     str(TOUCH_PIN):'TOUCH_MCU',str(LED_PIN):'LED_GPIO',
+     str(MIC_CLK):'PDM_CLK_MCU',str(MIC_DATA):'PDM_DATA_MCU'}
 m.update({str(pin):f'ROW{i}' for i,pin in enumerate(ROWS)})
 m.update({str(pin):f'COL{i}' for i,pin in enumerate(COLS)})
 add('U1','ESP32-S3-Zero-M','Zero',MCU,**m)
@@ -86,6 +93,11 @@ add('C7','100n','C0603',(28,10),**pn('LED_5V','GND'))
 add('C8','47u 10V','C1206',(32,16.0),**pn('LED_5V','GND'))
 add('C9','4.7n C0G','C0603',(32,4.5),**pn('LED_CT','GND'))
 add('C10','1u 16V','C0603',(36.4,8.5),**pn('VBUS','GND'))
+add('U4','MP34DT06JTR','MP34DT06J',MIC,**pn('V3V3','GND','PDM_CLK','PDM_DATA','GND'))
+add('C11','100n','C0603',(17.0,11.7),**pn('V3V3','GND'))
+add('C12','1u 16V','C0603',(17.0,14.0),**pn('V3V3','GND'))
+add('R8','33R','R0603',(35.8,18.0),**pn('PDM_CLK','PDM_CLK_MCU'))
+add('R9','470R','R0603',(59,2.2),**pn('PDM_DATA_MCU','PDM_DATA'))
 for i, xy in enumerate(MOUNT,1):
     add(f'H{i}','M2','Mount',xy)
 
@@ -105,6 +117,12 @@ BOM = [
     ('C8',1,'47 uF X5R 10 V','1206; ceramic',0.3,1),
     ('C9',1,'4.7 nF C0G 50 V','0603; load-switch slew-rate capacitor',0.04,0.2),
     ('C10',1,'1 uF X7R 16 V','0603; load-switch input bypass',0.05,0.2),
+    ('U4',1,'ST MP34DT06JTR','C503097; top-port PDM; no wash or coating over inlet',3,9),
+    ('C11',1,'100 nF X7R 16 V','0603; microphone bypass',0.04,0.12),
+    ('C12',1,'1 uF X7R 16 V','0603; microphone bypass',0.05,0.2),
+    ('R8',1,'33 ohm','0603; source series resistor on PDM clock',0.02,0.1),
+    ('R9',1,'470 ohm','0603; limits contention at GPIO43 during reset',0.02,0.1),
+    ('MIC-SEAL',1,'0.8 mm closed-cell foam, ID 1.6 mm / OD 2.8 mm','ring on underside of plate; keep inlet clear',0.1,0.5),
     ('PCB',1,'2-layer FR4 1.6 mm','95 x 98 mm; bare PCB; per board in small batch',5,20),
     ('CAPS-A',6,'MX 1U frosted translucent keycaps','matte clear or milky PC; 17.9 mm reference width',0.7,2.5),
     ('CAPS-C',5,'MX 1U opaque command caps','add optional icon decals',0.35,1.2),

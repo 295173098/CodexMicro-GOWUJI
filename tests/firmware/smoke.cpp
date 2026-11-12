@@ -30,6 +30,11 @@ int main(int argc,char**) {
     assert(BleKeys::fake.events.back()==0);
     contacts[0]=false;
     run(12);
+    consolePort.inject("HELLO GOWUJI/1\nMIC ON\n"); run(5);
+    contacts[PTT_PRIMARY]=true; run(60);
+    has("EV MIC_READY 0");
+    has_not("EV MIC_BEGIN");
+    assert(!MicInput::active);
     std::cout<<"BLE selection and disconnect: pass\n";
     return 0;
   }
@@ -51,6 +56,9 @@ int main(int argc,char**) {
   run(12);
   has("EV PTT 1"); has("EV JOY_UP 1"); has("EV JOY_DOWN 1");
   has_not("EV JOY_RIGHT 1");
+  consolePort.inject("MIC ON\n"); run(50);
+  has("EV MIC_READY 1"); has_not("EV MIC_BEGIN"); has_not("AUD ");
+  assert(!MicInput::active);
   consolePort.tx.clear();
   contacts[PTT_SECONDARY]=true; run(12);
   contacts[PTT_PRIMARY]=false; run(12);
@@ -60,10 +68,49 @@ int main(int argc,char**) {
   contacts[PTT_SECONDARY]=false; run(12);
   has("EV PTT 0");
   consolePort.tx.clear();
-  contacts[PTT_SECONDARY]=true; run(12);
+  contacts[PTT_SECONDARY]=true; run(51);
   has("EV PTT 1"); has_not("EV PROFILE ");
+  has("EV MIC_BEGIN 1\nAUD 0 EhIS");
+  const auto audio=consolePort.tx.find("AUD 0 ");
+  assert(consolePort.tx.find('\n',audio)-audio==434);
+  assert(MicInput::active);
   contacts[PTT_SECONDARY]=false; run(12);
   has("EV PTT 0");
+  has("EV MIC_END 1\n");
+  assert(!MicInput::active);
+  const size_t afterRelease=consolePort.tx.size();
+  run(30);
+  assert(consolePort.tx.size()==afterRelease);
+  consolePort.tx.clear();
+  contacts[PTT_PRIMARY]=true; run(30);
+  consolePort.tx_room=0; run(55);
+  assert(!MicInput::active);
+  consolePort.tx_room=64; run(10);
+  has("EV MIC_END 0");
+  contacts[PTT_PRIMARY]=false; run(12);
+  contacts[PTT_PRIMARY]=true; run(45);
+  assert(MicInput::active);
+  consolePort.connected=false; run(2);
+  assert(!MicInput::active);
+  consolePort.connected=true;
+  contacts[PTT_PRIMARY]=false; run(12);
+  consolePort.inject("HELLO GOWUJI/1\nMIC ON\n"); run(4);
+  contacts[PTT_PRIMARY]=true; run(45);
+  assert(MicInput::active);
+  run(2501);
+  assert(!MicInput::active);
+  consolePort.inject("HELLO GOWUJI/1\nMIC ON\n"); run(45);
+  assert(!MicInput::active);  // Re-subscription while held does not restart capture.
+  contacts[PTT_PRIMARY]=false; run(12);
+  consolePort.tx.clear();
+  contacts[PTT_PRIMARY]=true; run(45);
+  for (int i=0;i<61;i++) {
+    consolePort.inject("HELLO GOWUJI/1\nMIC ON\n");
+    run(1000);
+  }
+  assert(!MicInput::active);
+  has("EV MIC_END 1\n");
+  contacts[PTT_PRIMARY]=false; run(12);
   consolePort.inject("HELLO GOWUJI/1\nLED 123456\n"); run(30);
   assert(remoteLED[0]==1 && remoteLED[5]==6);
   consolePort.inject("LED 987654\n"+std::string(70,'X')+"HELLO GOWUJI/1\n");
@@ -84,5 +131,5 @@ int main(int argc,char**) {
   assert(keyboard.events.back()==0x69 && pixels.updates>1);
   contacts[1]=false; run(12);
   assert(keyboard.events.back()==-0x69);
-  std::cout<<"Matrix bounce, chords, USB lease, LED parser, dual-contact PTT, encoder and touch: pass\n";
+  std::cout<<"Matrix, USB lease, LED parser, dual-contact PTT, encoder, touch and gated USB audio: pass\n";
 }

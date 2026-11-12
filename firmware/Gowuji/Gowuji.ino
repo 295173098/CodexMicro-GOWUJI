@@ -9,6 +9,7 @@
 #include "ble_keys.h"
 #endif
 #include "pins.h"
+#include "mic_input.h"
 
 USBHIDKeyboard keyboard;
 USBCDC consolePort;
@@ -44,6 +45,98 @@ bool overflow = false;
 uint8_t dialTap = 0;
 uint32_t dialAt = 0;
 
+// One writer owns CDC so audio and control lines never interleave, even when
+// TinyUSB only accepts a portion of a line in its 64-byte TX buffer.
+char controls[16][48];
+uint8_t controlHead = 0, controlCount = 0;
+char outgoing[448];
+size_t outSize = 0, outAt = 0;
+bool micSubscribed = false, micRecording = false;
+uint32_t micStarted = 0, micProgress = 0;
+unsigned micSequence = 0, micSkip = 0;
+uint8_t micPcm[MicInput::samples*2];
+size_t pcmAt = 0;
+
+bool control(const char *msg) {
+  if (controlCount == 16 || !consolePort) return false;
+  snprintf(controls[(controlHead+controlCount)%16],48,"%s",msg);
+  ++controlCount;
+  return true;
+}
+
+bool emit(const char *name, int value) {
+  if (!host) return false;
+  char msg[48];
+  snprintf(msg,sizeof(msg),"EV %s %d\n", name, value);
+  return control(msg);
+}
+
+void micEnd(bool complete) {
+  if (!micRecording) return;
+  MicInput::stop();
+  micRecording = false;
+  emit("MIC_END",complete);
+}
+
+void micStart(uint32_t now) {
+  if (!host || !consolePort || wireless || !micSubscribed) return;
+  if (!MicInput::start()) {
+    emit("MIC_ERROR",1);
+    return;
+  }
+  if (!emit("MIC_BEGIN",1)) {
+    MicInput::stop();
+    return;
+  }
+  micRecording = true;
+  micStarted = micProgress = now;
+  micSequence = 0;
+  pcmAt = 0;
+  micSkip = 2;  // Discard 20 ms while the MEMS output settles.
+}
+
+void pumpSerial(uint32_t now) {
+  if (!host || !consolePort) return;
+  if (micRecording && (MicInput::lost() || now-micProgress>=35)) micEnd(false);
+  if (micRecording && now-micStarted>=60000) micEnd(true);
+  if (outAt == outSize) {
+    outSize = outAt = 0;
+    if (controlCount) {
+      const char *msg = controls[controlHead];
+      outSize = strlen(msg);
+      memcpy(outgoing,msg,outSize);
+      controlHead = (controlHead+1)%16;
+      --controlCount;
+    } else if (micRecording) {
+      pcmAt += MicInput::read(micPcm+pcmAt,sizeof(micPcm)-pcmAt);
+      if (pcmAt == sizeof(micPcm)) {
+        pcmAt = 0;
+        micProgress = now;
+        if (micSkip) --micSkip;
+        else {
+          static constexpr char alphabet[] =
+              "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          outSize = snprintf(outgoing,sizeof(outgoing),"AUD %u ",micSequence++);
+          for (size_t i=0; i<sizeof(micPcm); i+=3) {
+            const unsigned a = micPcm[i], b = i+1<sizeof(micPcm) ? micPcm[i+1] : 0;
+            const unsigned c = i+2<sizeof(micPcm) ? micPcm[i+2] : 0;
+            outgoing[outSize++] = alphabet[a>>2];
+            outgoing[outSize++] = alphabet[((a&3)<<4)|(b>>4)];
+            outgoing[outSize++] = i+1<sizeof(micPcm) ? alphabet[((b&15)<<2)|(c>>6)] : '=';
+            outgoing[outSize++] = i+2<sizeof(micPcm) ? alphabet[c&63] : '=';
+          }
+          outgoing[outSize++] = '\n';
+        }
+      }
+    }
+  }
+  const size_t room = consolePort.availableForWrite();
+  const size_t pending = outSize-outAt;
+  if (room && pending)
+    outAt += consolePort.write(reinterpret_cast<const uint8_t *>(outgoing)+outAt,
+                               pending<room ? pending : room);
+}
+
 uint8_t encoder() { return (digitalRead(ENC_A) << 1) | digitalRead(ENC_B); }
 bool hidPress(uint8_t raw) { return wireless ? BleKeys::press(raw) : keyboard.pressRaw(raw) != 0; }
 void hidRelease(uint8_t raw) {
@@ -53,10 +146,6 @@ void hidClear() {
   if (wireless) BleKeys::clear(); else keyboard.releaseAll();
   memset(hidDown,0,sizeof(hidDown));
   dialTap=0;
-}
-
-void emit(const char *name, int value) {
-  if (host && consolePort) consolePort.printf("EV %s %d\n", name, value);
 }
 
 void keyEvent(uint8_t i, bool down) {
@@ -105,6 +194,7 @@ void readMatrix(uint32_t now) {
   if (down != pttDown) {
     pttDown = down;
     keyEvent(PTT_PRIMARY, down);
+    if (down) micStart(now); else micEnd(true);
   }
 }
 
@@ -152,24 +242,37 @@ void command(const char *s, uint32_t now) {
     }
     host = true;
     alive = now;
-    consolePort.println("OK GOWUJI/1");
+    control("OK GOWUJI/1\n");
     emit("PROFILE",layer);
     emit("PTT_STATE",pttDown);
   } else if (host && strcmp(s,"PING") == 0) {
     alive = now;
-    consolePort.println("PONG");
+    control("PONG\n");
+  } else if (host && strcmp(s,"MIC ON") == 0) {
+    micSubscribed = !wireless;
+    emit("MIC_READY",micSubscribed);
+  } else if (host && strcmp(s,"MIC OFF") == 0) {
+    micSubscribed = false;
+    micEnd(false);
   } else if (host && strncmp(s,"LED ",4) == 0 && strlen(s) == 10) {
     for (uint8_t i=4;i<10;i++) if (s[i]<'0' || s[i]>'6') return;
     for (uint8_t i=0;i<LED_COUNT;i++) remoteLED[i] = s[i+4] - '0';
     alive = now;
   } else if (host && strcmp(s,"TOUCH?") == 0) {
-    consolePort.printf("TOUCH %lu %lu\n",(unsigned long)touchRead(TOUCH_PIN),(unsigned long)touchBaseline);
+    char msg[48];
+    snprintf(msg,sizeof(msg),"TOUCH %lu %lu\n",(unsigned long)touchRead(TOUCH_PIN),(unsigned long)touchBaseline);
+    control(msg);
   }
 }
 
 void serialInput(uint32_t now) {
   if (host && (!consolePort || now - alive > leaseMs)) {
     host = false;
+    micSubscribed = false;
+    micEnd(false);
+    // Complete the framing of a partial line before sending any new session data.
+    outSize = outAt = controlCount = controlHead = 0;
+    if (consolePort) control("\n");
     memset(remoteLED,0,sizeof(remoteLED));
   }
   for (int i=0; i<96 && consolePort.available(); ++i) {
@@ -211,6 +314,8 @@ void setup() {
   pinMode(ROWS[2],INPUT);
   pinMode(ENC_A,INPUT_PULLUP);
   pinMode(ENC_B,INPUT_PULLUP);
+  pinMode(MIC_DATA_PIN,INPUT);
+  MicInput::stop();
   encOld = encoder();
   pixels.begin();
   pixels.setBrightness(45);
@@ -250,5 +355,6 @@ void loop() {
   }
   if (now-lastTouch>=12) { lastTouch=now; readTouch(now); }
   if (now-lastDisplay>=25) { lastDisplay=now; display(now); }
+  pumpSerial(now);
   delayMicroseconds(125);
 }
