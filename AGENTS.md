@@ -29,3 +29,5 @@
 
 - 2026-11-13（第 9 轮，正反面外观）：根据用户给的原厂参考照片，增加独立 A4 外观选件。正面改圆角边框、内嵌面板、浅凹键帽、触摸标记、低 USB 盖；背面加浅边线和 Ø76 mm 单独打印圆盘，圆盘中央图标凹刻约 0.65 mm。外壳底边延长 1.8 mm 以避开末排按键，PCB、固件和原 A4 候选包未改。12 个新 STL 网格闭合，CAD 检查 4 mm 键程、USB 插头、拾音孔、圆盘及安装位无干涉，实物公差与材料质感仍待验证。
 - 外观选件源码 `mechanical/appearance.py`，复现和打印说明 `docs/appearance.md`，验证和 KiCad 渲染用 `tools/review_appearance.py`。本地 `build/appearance/` 含 `front.png`、`rear.png`、`appearance-preview.kicad_pcb`、打印与 STEP 压缩包 `GOWUJI-A4-appearance.zip`。未上传 GitHub 或发布 Release。
+
+- 第 10 轮（去除正面凸盖）：用户指出参考图的面板没有前一版顶边中央白色凸起。确认该件是为遮盖 A4 的 Waveshare USB 模块而加的可拆打印盖；从 A4 外观选件、KiCad 预览和 ZIP 移除。USB-C、BOOT 和 RESET 保留在顶边开口内；检查模块、插头、板载麦克风拾音孔和 4 mm 键程无几何干涉，11 个新 STL 均闭合。背面凹刻圆盘、A4 PCB、固件与原 alpha.4 候选包未改，未上传 GitHub。

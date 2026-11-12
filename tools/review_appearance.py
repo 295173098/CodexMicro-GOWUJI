@@ -19,17 +19,16 @@ def clear(a,b):
 
 
 def validate(out):
-    t,f,d,c=look.tray(),look.face(),look.fitted_disk(),look.cover()
+    t,f,d=look.tray(),look.face(),look.fitted_disk()
     pcb=a4.block(a4.W/2,a4.H/2,a4.W,a4.H,4.8,1.6)
     clear(t,pcb)
     clear(f,pcb)
     clear(t,d)
     clear(t,f)
-    clear(f,c)
     module=a4.block(a4.MCU[0],a4.MCU[1]+11.75,18.3,23.8,8.4,4.85)
     plug=a4.block(a4.MCU[0],-2.25,12.5,6,6.55,6.6)
-    clear(c,module)
-    clear(c,plug)
+    clear(f,module)
+    clear(t,module)
     clear(f,plug)
     clear(t,plug)
     clear(f,a4.block(*a4.MIC,3.1,4.1,6.4,1.12))
@@ -43,11 +42,11 @@ def validate(out):
         if i not in (a4.PTT_PRIMARY,a4.PTT_SECONDARY):
             moving=key.translate((x,-y,6.4+9.2-4))
             clear(f,moving)
-            clear(c,moving)
     x,y=a4.KEYS[a4.PTT_PRIMARY]
     clear(f,look.cap("ptt").translate((x+a4.PTT_PITCH/2,-y,6.4+9.2-4)))
     clear(f,a4.cyl(*a4.ENC,8.8,6.4+13.3,9))
-    for path in out.glob("*.stl"):
+    for name in look.PRINT_NAMES:
+        path=out/f"{name}.stl"
         blob=path.read_bytes()
         count=struct.unpack_from("<I",blob,80)[0]
         assert len(blob)==84+50*count
@@ -57,9 +56,7 @@ def validate(out):
             pts=[tuple(round(v,5) for v in flat[j:j+3]) for j in (0,3,6)]
             edges.update(tuple(sorted((a,b))) for a,b in zip(pts,pts[1:]+pts[:1]))
         assert set(edges.values())=={2},path
-    count=len(list(out.glob("*.stl")))
-    assert count==12
-    print(f"Verified {count} closed meshes, rear seat, cover/USB, microphone and 4 mm key travel.")
+    print(f"Verified {len(look.PRINT_NAMES)} closed meshes, rear seat, USB opening, microphone and 4 mm key travel.")
 
 
 def render(out,cli):
@@ -82,10 +79,12 @@ def render(out,cli):
 
 def package(out):
     with zipfile.ZipFile(out/"GOWUJI-A4-appearance.zip","w",zipfile.ZIP_DEFLATED) as z:
-        for p in sorted(out.iterdir()):
-            if (p.suffix==".stl" or p.suffix==".png" or
-                p.suffix==".step" and not p.name.startswith("preview-")):
-                z.write(p,p.name)
+        for n in look.PRINT_NAMES:
+            for ext in ("stl","step"):
+                filename=f"{n}.{ext}"
+                z.write(out/filename,filename)
+        for filename in ("enclosure.step","front.png","rear.png"):
+            z.write(out/filename,filename)
         z.write(ROOT/"docs/appearance.md","appearance.md")
         for name in ("light-pipes.stl","joystick-cap.stl","mx-fit-coupon.stl"):
             z.write(ROOT/"mechanical"/name,"reuse-a4/"+name)

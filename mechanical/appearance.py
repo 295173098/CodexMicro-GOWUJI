@@ -40,8 +40,8 @@ def face():
     plate=a4.panel().union(lower_edge(9.9,1.5)).intersect(frame_shape(0,6.2,5.3))
     lip=frame_shape(0,FACE-.1,1.0).edges(">Z").chamfer(.42)
     lip=lip.cut(frame_shape(2.65,FACE-.25,1.6,bottom_inset=2.05))
-    # The raised rim breaks at the USB notch, including its removable cover.
-    lip=lip.cut(a4.block(a4.MCU[0],-.9,22.2,5.2,FACE-.25,1.65))
+    # Match the panel notch at the edge. The module and its buttons remain accessible.
+    lip=lip.cut(a4.block(a4.MCU[0],-.9,a4.MODULE_NOTCH_WIDTH,5.2,FACE-.25,1.65))
     return plate.union(lip)
 
 
@@ -123,11 +123,6 @@ def cap(name):
     return part.cut(icon(name,4.62,.65))
 
 
-def cover():
-    shell=rounded(a4.MCU[0],10.7,22,23.4,FACE,2.8,1.15).edges(">Z").chamfer(.55)
-    return shell.cut(a4.block(a4.MCU[0],10.7,19.6,24.2,FACE-.1,2.25))
-
-
 def knob():
     shape=a4.cyl(0,0,8.8,0,9).edges("<Z").chamfer(.9)
     socket=a4.cyl(0,0,3.09,1.6,8).cut(a4.block(4.05,0,5,8,1.5,8.2))
@@ -135,13 +130,14 @@ def knob():
 
 
 NAMES=("agent","new-chat","accept","decline","interrupt","find","ptt")
+PRINT_NAMES=("base","face","rear-disk","encoder-knob")+tuple(f"key-{n}" for n in NAMES)
 
 
 def export(out):
     out.mkdir(parents=True,exist_ok=True)
-    t,p,d,c=tray(),face(),disk(),cover()
+    t,p,d=tray(),face(),disk()
     models={"base":t,"face":p.rotate((0,0,0),(1,0,0),180).translate((0,0,12.3)),
-            "rear-disk":d,"usb-cover":c.rotate((0,0,0),(1,0,0),180).translate((-a4.MCU[0],-10.7,14.2)),
+            "rear-disk":d,
             "encoder-knob":knob()}
     models.update({f"key-{n}":cap(n) for n in NAMES})
     for n,shape in models.items():
@@ -157,7 +153,7 @@ def export(out):
         assembly.export(str(out/f"{name}.step"))
 
     parts=[("base",t,(.65,.67,.68)),("face",p,(.91,.92,.91)),
-           ("cover",c,(.89,.90,.89)),("back",fitted_disk(),(.81,.83,.85))]
+           ("back",fitted_disk(),(.81,.83,.85))]
     x,y=a4.TOUCH
     parts.append(("touch-mark",a4.cyl(x,y,3.4,FACE+.002,.028),(.29,.32,.34)))
     for i,(x,y) in enumerate(a4.MOUNT):
