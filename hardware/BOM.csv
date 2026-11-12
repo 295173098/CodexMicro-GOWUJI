@@ -2,7 +2,7 @@
 U1,1,Waveshare ESP32-S3-Zero-M (4 MB / 2 MB),with 2x9 male headers,19,28,19,28
 U2,1,TI SN74LV1T125DBVR,SOT-23-5; 1.8–5.5 V translator,0.7,2.5,0.7,2.5
 U3,1,TI TPS22918DBVR,SOT-23-6; 5 V LED rail load switch,1.5,5,1.5,5
-SW1-SW13,13,MX-compatible 3-pin or 5-pin switches,solder type; one switch per key,0.65,1.5,8.45,19.5
+SW1-SW13,13,MX-compatible 3-pin or 5-pin switches,solder type; match SW4 and SW13 for the shared 2U cap,0.65,1.5,8.45,19.5
 SW14,1,ALPS EC11E15244G1,push encoder; confirm drawing / D shaft,5,12,5,12
 SW15,1,ALPS SKRHAAE010,no guide bosses; verify footprint before substituting,5,16,5,16
 D1-D19,19,Diodes Inc. BAT46W-7-F,SOD-123; low forward drop Schottky,0.08,0.3,1.52,5.7
@@ -15,9 +15,10 @@ C8,1,47 uF X5R 10 V,1206; ceramic,0.3,1,0.3,1
 C9,1,4.7 nF C0G 50 V,0603; load-switch slew-rate capacitor,0.04,0.2,0.04,0.2
 C10,1,1 uF X7R 16 V,0603; load-switch input bypass,0.05,0.2,0.05,0.2
 PCB,1,2-layer FR4 1.6 mm,95 x 98 mm; bare PCB; per board in small batch,5,20,5,20
-CAPS,13,MX 1U keycaps,buy one generic set / loose caps,0.35,1.2,4.55,15.6
-PRINT,1,PLA/PETG + translucent material,"base, plate, knobs; material only",4,10,4,10
+CAPS-A,6,MX 1U frosted translucent keycaps,matte clear or milky PC; 17.9 mm reference width,0.7,2.5,4.2,15.0
+CAPS-C,5,MX 1U opaque command caps,add optional icon decals,0.35,1.2,1.75,6.0
+PRINT,1,PLA/PETG + translucent material,"base, plate, knobs, light pipes and dual-stem 2U cap",4.5,11,4.5,11
 SCREWS,4,M2x10 pan-head screws,self-tap into printed pilot holes,0.1,0.35,0.4,1.4
 FOIL,1,Copper adhesive foil + thin wire,14 mm square + 50 mm wire,0.2,1,0.2,1
 USB,1,USB-C data cable,reuse an existing cable,0,8,0,8
-TOTAL,,Planning estimate,"Excludes labor, shipping and PCBA",,,57.93,153.04
+TOTAL,,Planning estimate,"Excludes labor, shipping and PCBA",,,59.83,159.44

@@ -51,9 +51,18 @@ int main(int argc,char**) {
   run(12);
   has("EV PTT 1"); has("EV JOY_UP 1"); has("EV JOY_DOWN 1");
   has_not("EV JOY_RIGHT 1");
+  consolePort.tx.clear();
+  contacts[PTT_SECONDARY]=true; run(12);
+  contacts[PTT_PRIMARY]=false; run(12);
+  has_not("EV PTT "); has_not("EV PTT_B");
   consolePort.inject("HELLO GOWUJI/1\n"); run(2);
   has("EV PTT_STATE 1");
-  contacts[3]=false; run(12);
+  contacts[PTT_SECONDARY]=false; run(12);
+  has("EV PTT 0");
+  consolePort.tx.clear();
+  contacts[PTT_SECONDARY]=true; run(12);
+  has("EV PTT 1"); has_not("EV PROFILE ");
+  contacts[PTT_SECONDARY]=false; run(12);
   has("EV PTT 0");
   consolePort.inject("HELLO GOWUJI/1\nLED 123456\n"); run(30);
   assert(remoteLED[0]==1 && remoteLED[5]==6);
@@ -75,5 +84,5 @@ int main(int argc,char**) {
   assert(keyboard.events.back()==0x69 && pixels.updates>1);
   contacts[1]=false; run(12);
   assert(keyboard.events.back()==-0x69);
-  std::cout<<"Matrix bounce, chords, USB lease, LED parser, PTT heartbeat, encoder and touch: pass\n";
+  std::cout<<"Matrix bounce, chords, USB lease, LED parser, dual-contact PTT, encoder and touch: pass\n";
 }

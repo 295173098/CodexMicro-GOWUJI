@@ -35,6 +35,7 @@ uint8_t localLED[LED_COUNT]{}, remoteLED[LED_COUNT]{};
 uint8_t layer = 0;
 uint32_t alive = 0, touchBaseline = 0, lastTouch = 0, lastScan = 0, lastDisplay = 0, layerFlash = 0;
 bool host = false, touched = false, wireless = false, bleWasReady = false;
+bool pttDown = false;
 int8_t encSteps = 0;
 uint8_t encOld = 0;
 char line[64];
@@ -63,11 +64,6 @@ void keyEvent(uint8_t i, bool down) {
     hidRelease(fallback[i]);
     hidDown[i] = false;
   }
-  if (i == 12 && down) {
-    layer = (layer + 1) % 6;
-    layerFlash = millis() + 440;
-    emit("PROFILE",layer);
-  }
   if (ledIndex[i] != 255) localLED[ledIndex[i]] = down ? 2 : 1;
   if (host) {
     emit(KEY_NAMES[i], down);
@@ -89,7 +85,7 @@ void sample(uint8_t i, bool on, uint32_t now) {
   }
   if (k.stable != on) {
     k.stable = on;
-    keyEvent(i, on);
+    if (i != PTT_PRIMARY && i != PTT_SECONDARY) keyEvent(i, on);
   }
 }
 
@@ -103,6 +99,12 @@ void readMatrix(uint32_t now) {
       if (i >= 0) sample(i, digitalRead(COLS[c]) == LOW, now);
     }
     pinMode(ROWS[r], INPUT);  // Other rows float, including while a chord is held.
+  }
+  // Either switch under the shared 2U cap holds PTT; only release once both release.
+  const bool down = key[PTT_PRIMARY].stable || key[PTT_SECONDARY].stable;
+  if (down != pttDown) {
+    pttDown = down;
+    keyEvent(PTT_PRIMARY, down);
   }
 }
 
@@ -152,7 +154,7 @@ void command(const char *s, uint32_t now) {
     alive = now;
     consolePort.println("OK GOWUJI/1");
     emit("PROFILE",layer);
-    emit("PTT_STATE",key[3].stable);
+    emit("PTT_STATE",pttDown);
   } else if (host && strcmp(s,"PING") == 0) {
     alive = now;
     consolePort.println("PONG");

@@ -11,7 +11,10 @@ import sys
 import xml.etree.ElementTree as ET
 
 import numpy as np
-from design import ROOT, MATRIX, KEYS, MOUNT, MCU, W, H, ENC
+from design import (ROOT, MATRIX, KEYS, KEY_GRID, LED_KEYS, LEDS, MOUNT, MCU, W, H,
+                    ENC, JOY, TOUCH, XS, YS, PTT_PRIMARY, PTT_SECONDARY)
+
+CURRENT = "A3"
 
 
 class Vector(c.Structure):
@@ -59,8 +62,8 @@ def sweep_power(sp, out, pcb_loop):
     corners=list(itertools.product((4.75,5.25),(.22,.55),(.5,1.5),(6,13),(18,55),(7,19),(.222,.276)))
     corners.insert(0,(5.0,.35,.9,9,32,12,.222))
     for i,(v,r,l,cm,cl,slew,pulse) in enumerate(corners):
-        for rev in ("A1","A2"):
-            if rev=="A2":
+        for rev in ("A1",CURRENT):
+            if rev==CURRENT:
                 supply=f"""Vtarget target 0 PWL(0 0 2m 0 {2+slew}m {v})
 Bswitch bus led I=max(0,(min(v(bus),v(target))-v(led))/0.09)
 Rbleed led 0 100k
@@ -97,11 +100,11 @@ Iled last 0 PULSE(0 {pulse} 45m 2u 2u 0.25m 1.5m)
                 representative[rev]=(t,led,current)
                 (out/f"power-{rev}.cir").write_text(deck+"\n",encoding="ascii")
     a1=[r for r in results if r["revision"]=="A1"]
-    a2=[r for r in results if r["revision"]=="A2"]
-    assert all(a["attach_charge_uC"]>b["attach_charge_uC"] for a,b in zip(a1,a2))
-    assert min(r["led_min_V"] for r in a2)>4.25
-    assert max(r["active_peak_mA"] for r in a2)<500
-    assert max(r["late_start_peak_mA"] for r in a2)<100
+    revised=[r for r in results if r["revision"]==CURRENT]
+    assert all(a["attach_charge_uC"]>b["attach_charge_uC"] for a,b in zip(a1,revised))
+    assert min(r["led_min_V"] for r in revised)>4.25
+    assert max(r["active_peak_mA"] for r in revised)<500
+    assert max(r["late_start_peak_mA"] for r in revised)<100
     return results,representative
 
 
@@ -110,7 +113,7 @@ def sweep_logic(sp,out):
     # The old case stresses uncertain internal pull-ups (25–75 kΩ).
     # New hardware uses external ±1% resistors. Open input uses a 10 uA
     # leakage sink as a guardband, not a full network temperature model.
-    for rev,vals in (("A1", (25e3,75e3)),("A2",(21.78e3,22.22e3))):
+    for rev,vals in (("A1", (25e3,75e3)),(CURRENT,(21.78e3,22.22e3))):
         for v,r,cap,leak,temp in itertools.product((3.0,3.6),vals,(30,200),(0,10e-6),(-10,60)):
             model="D(IS=2n N=1.75 RS=1.2 EG=1.11)" if rev=="A1" else "D(IS=8n N=1 RS=4 EG=0.69 XTI=2)"
             wait=12 if rev=="A1" else 25
@@ -135,11 +138,11 @@ Ccol col 0 {cap}p
             high=float(np.interp((20+wait)*1e-6,t,col))
             result.append(dict(revision=rev,VDD=v,Rpull_ohm=r,Ccolumn_pF=cap,leak_A=leak,temp_C=temp,
                                low_V=low,high_V=high,low_margin_V=.25*v-low,high_margin_V=high-.75*v))
-            if rev=="A2" and (v,r,cap,leak,temp)==(3.0,22.22e3,200,10e-6,-10):
-                (out/"matrix-A2-corner.cir").write_text(deck+"\n",encoding="ascii")
-    a2=[r for r in result if r["revision"]=="A2"]
-    assert min(r["low_margin_V"] for r in a2)>.15
-    assert min(r["high_margin_V"] for r in a2)>.2
+            if rev==CURRENT and (v,r,cap,leak,temp)==(3.0,22.22e3,200,10e-6,-10):
+                (out/f"matrix-{CURRENT}-corner.cir").write_text(deck+"\n",encoding="ascii")
+    revised=[r for r in result if r["revision"]==CURRENT]
+    assert min(r["low_margin_V"] for r in revised)>.15
+    assert min(r["high_margin_V"] for r in revised)>.2
     return result
 
 
@@ -178,6 +181,9 @@ def mechanical_geometry():
     sys.path.insert(0,str(ROOT/"mechanical"))
     import generate as geom
     tray,plate=geom.base(),geom.panel()
+    assert {KEY_GRID[i] for i in LED_KEYS} == {(1,0),(2,0),(0,1),(1,1),(2,1),(3,1)}
+    assert ENC == (XS[0],YS[0]) and JOY == (XS[3],YS[0]) and TOUCH == (XS[0],YS[3])
+    assert KEY_GRID[PTT_PRIMARY] == (1,3) and KEY_GRID[PTT_SECONDARY] == (2,3)
     pcb=geom.block(W/2,H/2,W,H,4.8,1.6)
     assert tray.intersect(pcb).solids().size()==0
     assert plate.intersect(pcb).solids().size()==0
@@ -190,18 +196,29 @@ def mechanical_geometry():
     for x,y in MOUNT:
         screw=geom.cyl(x,y,1.05,4.9,6.48)
         assert plate.intersect(screw).solids().size()==0
-    web=KEYS[0][1]-geom.MX_OPENING/2-geom.MODULE_NOTCH_END
+    web=YS[0]-geom.MX_OPENING/2-geom.MODULE_NOTCH_END
     # Two independently printed edges can each shift by 0.20 mm.
     assert web-.40>=1.2
     sleeve=geom.block(MCU[0],-2.25,12.5,6,6.55,6.6)
     assert tray.intersect(sleeve).solids().size()==0
     assert plate.intersect(sleeve).solids().size()==0
+    cover=geom.usb_cover()
+    assert cover.intersect(sleeve).solids().size()==0 and cover.intersect(module).solids().size()==0
+    cover_key_gap=YS[0]-17.9/2-(10.7+23.4/2)
+    assert cover_key_gap>=1.2
     # PCB underside 4.8; factory pin tail must be trimmed to 3.0 mm max.
     clearance=4.8-1.35-3.0
-    enc_clear=H-(ENC[1]+5.6+3.4/2)
+    enc_clear=min(ENC[1],H-ENC[1])-5.6-3.4/2
     assert clearance>=.4 and enc_clear>=1.0
+    window_web=min(KEYS[i][1]-y for i,(_,y) in zip(LED_KEYS,LEDS))-geom.MX_OPENING/2-2.4/2
+    assert window_web>.8
+    x,y=KEYS[PTT_PRIMARY]
+    ptt_full_travel=geom.ptt_cap().translate((x+geom.PTT_PITCH/2,-y,15.6-4.0))
+    assert ptt_full_travel.intersect(plate).solids().size()==0
+    ptt_side_gap=1.5*geom.PTT_PITCH-36.9/2-17.9/2
+    assert ptt_side_gap>=1.0
     meshes={}
-    for name in ("base","plate","dial","joystick-cap","light-pipes","mx-fit-coupon"):
+    for name in ("base","plate","dial","joystick-cap","light-pipes","mx-fit-coupon","ptt-keycap-2u","usb-cover"):
         blob=(ROOT/"mechanical"/f"{name}.stl").read_bytes()
         triangles=struct.unpack_from("<I",blob,80)[0]
         assert len(blob)==84+50*triangles
@@ -213,6 +230,8 @@ def mechanical_geometry():
         assert set(edges.values())=={2},name
         meshes[name]=triangles
     return dict(nominal_usb_web_mm=web,usb_web_after_0p2mm_per_edge_mm=web-.4,
+                led_window_web_mm=window_web,ptt_adjacent_cap_gap_mm=ptt_side_gap,
+                usb_cover_to_keycap_gap_mm=cover_key_gap,
                 min_header_tail_clearance_mm=clearance,
                 encoder_pad_to_board_edge_mm=enc_clear,checked_key_openings=len(KEYS),closed_stl_triangles=meshes)
 
@@ -239,7 +258,7 @@ def main():
         import matplotlib.pyplot as plt
         fig,axes=plt.subplots(1,2,figsize=(10.2,4.1),layout="constrained")
         for rev,(t,led,current) in curves.items():
-            name="A1 direct capacitor" if rev=="A1" else "A2 soft start"
+            name="A1 direct capacitor" if rev=="A1" else f"{CURRENT} soft start"
             axes[0].plot(t*1e3,current,label=name)
             axes[1].plot(t*1e3,led,label=name)
         for ax,y,xmax in zip(axes,("USB input current (A)","LED rail (V)"),(.6,20)):
@@ -248,7 +267,7 @@ def main():
             ax.legend()
         fig.suptitle("USB attach — nominal circuit model (not lab data)")
         fig.savefig(args.out/"usb-attach.png",dpi=160)
-    for rev in ("A1","A2"):
+    for rev in ("A1",CURRENT):
         a=[r for r in power if r["revision"]==rev]
         b=[r for r in logic if r["revision"]==rev]
         print(f"{rev}: attach charge {min(x['attach_charge_uC'] for x in a):.1f}–"

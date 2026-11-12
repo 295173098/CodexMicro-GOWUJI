@@ -100,8 +100,10 @@ def footprint(kind, part=None):
     model=[]
     if kind in MODEL_PATHS:
         where,path,angle=MODEL_PATHS[kind]
-        if kind=='MX' and part and part.val.startswith('SLOT'):
-            path='mx-agent.step'
+        if kind=='MX' and part:
+            path={'PTT':'mx-ptt.step','PTT_B':'mx-bare.step'}.get(part.val,
+                'mx-agent.step' if part.val.startswith('SLOT') else
+                f'mx-{part.val.lower().replace("_","-")}.step')
         prefix='${KIPRJMOD}/models/' if where=='local' else '${KICAD9_3DMODEL_DIR}/'
         model=[f'(model {q(prefix+path)} (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 {angle})))']
     return (f'(footprint {q(name)} '+('' if part else '(version 20241229) (generator "pcbnew") ')+
@@ -114,16 +116,16 @@ def board():
     shapes=[f'(gr_rect (start 0 0) (end {W} {H}) (stroke (width 0.05) (type default)) (fill none) (layer "Edge.Cuts") {u("edge")})']
     for i,(x,y) in enumerate(KEYS):
         shapes.append(f'(gr_text "{NAMES[i]}" (at {xy(x,y-5.3)}) (layer "F.SilkS") (effects (font (size .8 .8) (thickness .13))))')
-    for name,x,y in [('GOWUJI / REV A2',19,4.2),('USB / BOOT',82.5,4.2),('TOUCH FOIL',18.4,96)]:
+    for name,x,y in [('GOWUJI / REV A3',19,4.2),('USB / BOOT',72,4.2),('TOUCH FOIL',18.4,96)]:
         shapes.append(f'(gr_text "{name}" (at {xy(x,y)}) (layer "F.SilkS") (effects (font (size 1 1) (thickness .15))))')
-    shapes.append('''(zone (net 0) (net_name "") (layers "F.Cu" "B.Cu") (name "Module antenna")
+    shapes.append(f'''(zone (net 0) (net_name "") (layers "F.Cu" "B.Cu") (name "Module antenna")
     (hatch edge 0.5) (connect_pads (clearance 0)) (min_thickness .25)
     (keepout (tracks not_allowed) (vias not_allowed) (pads not_allowed) (copperpour not_allowed) (footprints allowed))
     (fill (thermal_gap 0.3) (thermal_bridge_width 0.3))
-    (polygon (pts (xy 61 20) (xy 71 20) (xy 71 27) (xy 61 27))))''')
+    (polygon (pts (xy {f(MCU[0]-5)} 20) (xy {f(MCU[0]+5)} 20) (xy {f(MCU[0]+5)} 27) (xy {f(MCU[0]-5)} 27))))''')
     return f'''(kicad_pcb (version 20241229) (generator "pcbnew")
  (general (thickness 1.6)) (paper "A4")
- (title_block (title "GOWUJI Macro Pad") (rev "A2"))
+ (title_block (title "GOWUJI Macro Pad") (rev "A3"))
  (layers (0 "F.Cu" signal) (31 "B.Cu" signal) (32 "B.Adhes" user) (33 "F.Adhes" user)
   (34 "B.Paste" user) (35 "F.Paste" user) (36 "B.SilkS" user) (37 "F.SilkS" user)
   (38 "B.Mask" user) (39 "F.Mask" user) (40 "Dwgs.User" user) (41 "Cmts.User" user)
@@ -255,7 +257,7 @@ def schematic():
  {" ".join(f'(pin {q(n)} {u("pin/"+p.ref+"/"+n)})' for n,*_ in ps)}
  (instances (project "Gowuji-RevA" (path "/{sch_id}" (reference {q(p.ref)}) (unit 1)))))''')
     return f'''(kicad_sch (version 20250114) (generator "eeschema") (uuid "{sch_id}")
- (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A2"))
+ (paper "A3") (title_block (title "GOWUJI Macro Pad") (rev "A3"))
  (lib_symbols {" ".join(sym(k,"Gowuji:"+k) for k in used)})
  {chr(10).join(objs)}
  (sheet_instances (path "/" (page "1")))
@@ -299,6 +301,7 @@ constexpr uint8_t ENC_A = {ENC_PINS[0]}, ENC_B = {ENC_PINS[1]}, TOUCH_PIN = {TOU
 constexpr int8_t MATRIX[4][5] = {vals([vals(r) for r in MATRIX])};
 constexpr const char *KEY_NAMES[] = {vals([q(n) for n in NAMES])};
 constexpr uint8_t LED_COUNT = {len(LEDS)};
+constexpr uint8_t PTT_PRIMARY = {PTT_PRIMARY}, PTT_SECONDARY = {PTT_SECONDARY};
 ''')
 
 if __name__=='__main__':

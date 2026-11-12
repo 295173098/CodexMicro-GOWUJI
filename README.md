@@ -1,12 +1,12 @@
-# GOWUJI Macro Pad · Rev A2
+# GOWUJI Macro Pad · Rev A3
 
-受 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 启发的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮和导光件均可自行打印。当前是 **Alpha 样机设计**，尚未做实物验证。
+按 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 键位设计的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴（其中两个共用 2U 语音键帽）、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮、导光件和 2U 键帽可打印。当前是 **Alpha 样机设计**，尚未做实物验证。
 
 | 交付 | 文件 |
 | --- | --- |
 | PCB、原理图、项目库 | [KiCad 项目](hardware/Gowuji-RevA.kicad_pro)、[PCB](hardware/Gowuji-RevA.kicad_pcb)、[原理图](hardware/Gowuji-RevA.kicad_sch) |
 | BOM | [BOM.csv](hardware/BOM.csv) |
-| 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[轴孔试片](mechanical/mx-fit-coupon.stl)、[装配 STEP](mechanical/fit-reference.step) |
+| 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[2U 语音键帽](mechanical/ptt-keycap-2u.stl)、[USB 盖](mechanical/usb-cover.stl)、[轴孔试片](mechanical/mx-fit-coupon.stl)、[装配 STEP](mechanical/fit-reference.step) |
 | 固件和烧录 | [Arduino 工程](firmware/Gowuji/)、[烧录脚本](firmware/flash.py) |
 | Codex 伴侣 | [Python 主机程序](host/gowuji.py) |
 | 制造与验证 | [打样和装配](docs/assembly.md)、[验证记录](docs/validation.md) |
@@ -15,23 +15,23 @@
 
 伴侣应用启动独立的 [Codex App Server](https://learn.chatgpt.com/docs/app-server)，不用原厂 VID/PID 或专有协议。它管理自己启动或接入的聊天；不能保证追踪官方桌面应用里正在运行的聊天，也不会出现在原厂设备配置页。旋钮选择下一次发送使用的推理强度，摇杆把提示词填入输入框。语音使用电脑麦克风及本地 Vosk 模型。语音和摇杆都只填入草稿，由用户点发送。按键接受/拒绝只对当前会话中已经显示的命令或文件审批有效。
 
-PCB 上六颗灯靠近对应键位，通过面板导光；六个位置映射到伴侣的聊天槽。状态为：无分配熄灭、空闲白、运行蓝、完成绿、待输入黄、错误红。触摸片和第 13 键切换六个配置层。传入 `--profiles host/profiles.example.json` 可替换每层的摇杆提示词和部分命令键；标准 HID 模式保持固定键值。
+PCB 上六颗灯靠近上方六个磨砂透光状态键，通过面板导光；六个位置映射到伴侣的聊天槽。状态为：无分配熄灭、空闲白、运行蓝、完成绿、待输入黄、错误红。左下触摸片切换六个配置层；底部宽键下两轴合并为一个按住说话事件。传入 `--profiles host/profiles.example.json` 可替换每层的摇杆提示词和部分命令键；标准 HID 模式保持固定键值。
 
 | 位置 | 第 1 列 | 第 2 列 | 第 3 列 | 第 4 列 |
 | --- | --- | --- | --- | --- |
-| 第 1 排 | 会话 1 | 会话 2 | 新聊天 | 按住说话 |
-| 第 2 排 | 会话 3 | 会话 4 | 接受 | 拒绝 |
-| 第 3 排 | 会话 5 | 会话 6 | 查找 / 分配 | 中止当前回合 |
-| 第 4 排 | 触摸 | 摇杆 | 旋钮 | 层号 |
+| 第 1 排 | 旋钮 | 会话 1 | 会话 2 | 摇杆 |
+| 第 2 排 | 会话 3 | 会话 4 | 会话 5 | 会话 6 |
+| 第 3 排 | 新聊天 | 接受 | 拒绝 | 中止当前回合 |
+| 第 4 排 | 触摸切层 | 按住说话（2U 左） | 同一键（2U 右） | 查找 / 分配 |
 
-成本估算约 **¥58–153 / 套**，含小批量摊销裸 PCB 和自打耗材，不含人工、运费、代贴和外置电源。优先复用 USB 线和 1U 键帽；替代旋钮和摇杆前应先核对封装。Rev A2 已完成仿真和设计检查，建议先打样，量产前必须完成 [USB 与整机首件验证](docs/validation.md)。
+成本估算约 **¥60–159 / 套**，含小批量摊销裸 PCB 和自打耗材，不含人工、运费、代贴和外置电源。六个状态位用磨砂透光 1U MX 键帽，其余单宽命令键可复用通用键帽。量产前必须完成 [USB 与整机首件验证](docs/validation.md)。
 
 本地编译和启动：
 
 ```powershell
 python tools/build_firmware.py --install
 python -m pip install esptool==5.1.0
-python firmware/flash.py COM6 GOWUJI-v0.1.0-alpha.2-flash-0x0.bin
+python firmware/flash.py COM6 GOWUJI-v0.1.0-alpha.3-flash-0x0.bin
 python -m pip install -r host/requirements.txt
 python host/gowuji.py --port COM6 --cwd C:/path/to/project
 ```
@@ -40,4 +40,4 @@ python host/gowuji.py --port COM6 --cwd C:/path/to/project
 
 硬件使用 KiCad 9 打开。修改源数据后可用 `python tools/hardware.py` 更新原理图、BOM、项目库及固件引脚；该命令不会覆写已布线 PCB。若重新布局，`--unrouted build/layout.kicad_pcb` 生成裸布局，再在 KiCad 中布线并另存。用 `python mechanical/generate.py`（CadQuery 2.8）重建机械文件。用 `python tools/export_hardware.py` 重跑检查和制造导出。Release 同时提供可烧录的完整镜像、源码和 Gerber，发布状态见 [AGENTS.md](AGENTS.md)。
 
-在 PCB 编辑器按 `Alt+3` 打开装配预览。`hardware/models/` 内含简化的按键、模块、旋钮和摇杆 STEP，可用 `python mechanical/kicad_models.py` 重建。预览仅显示装有器件的电路板，面板及外壳见机械装配 STEP。
+在 PCB 编辑器按 `Alt+3` 查看装有器件的板。`hardware/models/` 内含简化的按键、模块、旋钮和摇杆 STEP，可用 `python mechanical/kicad_models.py` 重建。`python tools/export_hardware.py --render` 额外生成电路板和带外壳两张 KiCad 渲染图。A3 对齐原厂键位及按键分区，采用通用 MX 轴、打印外壳和独立伴侣程序；命令默认映射、手感、材料及灯光效果与原厂可能不同。
