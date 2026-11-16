@@ -1,4 +1,4 @@
-"""Write the released merged image to a Waveshare ESP32-S3-Zero via USB."""
+"""Write the matching merged image to a GOWUJI ESP32-S3 board via USB."""
 import argparse
 from pathlib import Path
 import subprocess

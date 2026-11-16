@@ -6,6 +6,6 @@ Rev B 使用 ESP32-S3FH4R2（QFN56，7 × 7 mm，4 MB Flash 和 2 MB PSRAM 在�
 
 首次烧录：开壳，用夹具将 TP1（BOOT）拉低，给 USB 供电或短接 TP2（RESET）到 TP3（GND）后释放 RESET，再释放 BOOT。选择新枚举的串口，烧录 Rev B 镜像到 `0x0`。TP4/TP5 提供 UART 救援；与 LED/PDM 线复用，使用 3.3 V UART，不能注入 5 V。Rev B 已编译生成合并镜像，实物烧录和启动仍待验证。
 
-**走线已闭合，暂不用于下单。** [Rev B 主板](../hardware/rev-b/Gowuji-RevB.kicad_pcb) 已加入 USB 输入阻尼、调整 USB 插座布线和射频线宽，并按 JLC04161H-3313 建立叠层。KiCad 检查为 0 项未连接、0 项规则违规、0 项板图差异。已导出制造审阅文件；实际阻抗和贴装料号仍待确认。见 [Rev B 放行记录](rev-b-validation.md)。
+**工程打样文件已备齐，待工厂 CAM 回签后开工。** 本轮建议 5 块 PCB、3–5 块贴装，按[打样下单说明](rev-b-order.md)使用 `build/rev-b-pcba.zip`。设计检查和扩展仿真见[放行记录](rev-b-validation.md)。这是首件工程验证，尚未证明实物 USB、温升、射频和整机功能通过；不用于量产。
 
 参考：[ESP32-S3 数据表](https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf)、[Espressif 原理图检查](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/schematic-checklist.html)、[PCB 布局建议](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/pcb-layout-design.html)。

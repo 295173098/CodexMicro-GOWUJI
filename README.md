@@ -1,5 +1,7 @@
 # GOWUJI Macro Pad · Rev A4
 
+> **Rev B PCB + 工厂贴装打样**：使用[Rev B 下单说明](docs/rev-b-order.md)和本地 `build/rev-b-pcba.zip`；工厂 CAM/供料/旋转回签后做 3–5 套工程样机。下方 A4 的双层板和成本不能代用。
+
 按 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 键位设计的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴（其中两个共用 2U 语音键帽）、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮、导光件和 2U 键帽可打印。当前是 **Alpha 样机设计**，尚未做实物验证。
 
 | 交付 | 文件 |

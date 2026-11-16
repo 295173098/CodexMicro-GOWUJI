@@ -4,8 +4,10 @@
 
 1. 查看 0.4 mm 间距 ESP32 焊盘的 Pin 1、裸露焊盘和短路风险；检查 USB 镀槽、LDO 方向、麦克风孔是否清洁。确认 C19/C20 未装。断电检查 VBUS_RAW、VBUS、3.3 V 对地无短路，R16 已焊接。
 2. 使用有电流限制的 5 V 源接入插座，观察 VBUS_RAW、R16 后 VBUS、3.3 V 和 CHIP_EN；先确认 3.3 V 稳定再接电脑。用短地弹簧在器件处测量，板内 VBUS 在热插拔、不同线材和接触反弹时应留在 TPS22918 规格内。记录峰值、前段电荷和限流情况。
-3. 拉低 TP1 BOOT，短接 TP2 RESET 到 TP3 GND 后释放 RESET，再释放 BOOT。用数据线连接电脑，确认出现下载串口。执行 `python firmware/flash.py COMx firmware/GOWUJI-RevB-flash-0x0.bin`，重启后再验证 USB 两种插向都能枚举。TP4/TP5 可用 3.3 V UART 救援。
+3. 拉低 TP1 BOOT，短接 TP2 RESET 到 TP3 GND 后释放 RESET，再释放 BOOT。用数据线连接电脑，确认出现下载串口。解压打样包，在包根目录执行 `python3 -m pip install esptool`，再执行 `python3 firmware/flash.py COMx firmware/GOWUJI-RevB-flash-0x0.bin`（把 COMx 换为实际端口），重启后再验证 USB 两种插向都能枚举。TP4/TP5 可用 3.3 V UART 救援。
 4. 测 4.75–5.25 V 输入、软启动、USB 枚举前与挂起的电流。分别启用高负载灯效、USB 音频和 BLE 发射，记录 3.3 V 最低值与 LDO 温升。BLE 使用外部 USB 供电时测试；使用匹配的 U.FL 天线，先确认配对和按键，再确认装壳后的距离。
 5. 检查全部按键、旋钮、摇杆、触摸、2U 两触点、状态灯和麦克风，重点测偏心按压和装壳拾音。用于 USB 语音转写时，运行伴侣并加载本地 Vosk 模型；检查释放语音键后只写入草稿。
 
 首件记录至少包含板号、线材、实测峰值和波形、电流、LDO 温度、双向枚举与烧录、BLE 距离、语音及装配结果。
+
+特别记录接入至配置完成前的电流波形：当前简化启动模型有约 110 mA 的区间，尚未证明枚举前 100 mA 预算满足。首件若超出该预算，需调整启动/灯电源使能并复测，不能把配置后的约 402 mA 预算直接套用到枚举前。挂起电流也须单独测试。工程样机通过上电并不等于 USB 合规或量产放行。

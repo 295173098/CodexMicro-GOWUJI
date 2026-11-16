@@ -11,7 +11,7 @@ from screen_rev_b_damping import deck
 from simulate_preproduction import Spice
 
 
-def operating_deck(v, cable, series, esr, bulk, switch_ms, cpu, led, start_ms):
+def operating_deck(v, cable, series, esr, bulk, switch_ms, cpu, led, start_ms, led_bulk=45):
     # The LDO uses the published worst pass resistance (1.6 V dropout at 1 A).
     # Graceful current turn-on avoids a constant current sink at zero voltage.
     # The capacitor ranges are assumed effective values, after DC bias.
@@ -33,7 +33,7 @@ Vcpu cpu 0 PWL(0 0 1m 0 3m .065 42m .065 42.002m {cpu} 42.8m {cpu} 42.802m .09)
 Bcpu chip 0 I=v(cpu)*min(1,max(0,v(chip)/3))
 Vtarget ledref 0 PWL(0 0 3m 0 {3+switch_ms}m 5.25)
 Bsw main led I=max(0,(min(v(main),v(ledref))-v(led))/0.1)
-Cled led 0 45u
+Cled led 0 {led_bulk}u
 Rled led last 0.23
 Vpix pix 0 PWL(0 0 20m 0 20.1m .006 42m .006 42.002m {led} 42.252m {led} 42.254m .012)
 BLED last 0 I=v(pix)*min(1,max(0,v(last)/3.3))
@@ -53,10 +53,12 @@ def run_operating(spice, out, r16=(.779,.861), r17=(1.445,1.635)):
     }
     for name, (cpu, led) in loads.items():
         rows = []
-        for v, cable, series, esr, bulk, switch, start in product(
-            (4.75, 5.25), (.10, .55), r16, r17, (10, 25), (7, 19), ramps
+        for v, cable, series, esr, bulk, switch, start, led_bulk in product(
+            (4.75, 5.25), (.10, .55), r16, r17, (10, 28), (7, 19), ramps, (12, 62)
         ):
-            params = (v, cable, series, esr, bulk, switch, cpu, led, start)
+            # C8 loses substantial capacitance at 5 V. Include the conservative
+            # 12 uF floor from the selected part, not just its 47 uF nameplate.
+            params = (v, cable, series, esr, bulk, switch, cpu, led, start, led_bulk)
             circuit = operating_deck(*params)
             t, bus, chip, endled, core, host = spice.run(
                 circuit, "time", "v(bus)", "v(chip)", "v(last)", "v(core)", "vhost#branch")
@@ -84,7 +86,7 @@ def run_operating(spice, out, r16=(.779,.861), r17=(1.445,1.635)):
 def run_passive(spice, out, r16=(.779,.861), r17=(1.445,1.635)):
     rows = []
     for params in product((4.75, 5.25), (.08, .22, .55), (.5, 1.5, 2.0),
-                          (1., 2.65), (2., 5.2), (.1, 1., 20.),
+                          (1., 2.8), (2., 6.0), (.1, 1., 20.),
                           r16, (.02, .06), r17):
         circuit = deck(*params)
         t, raw, bus, damp, current = spice.run(circuit, "time", "v(connector)", "v(bus)", "v(c14)", "vhost#branch")
