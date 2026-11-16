@@ -16,12 +16,15 @@ EPSILON0 = 8.8541878128e-12
 
 
 def estimate(width, spacing=None, gap=.20, *, h=.0994, dk=4.1, copper=.035,
-             etch=.0178, step=.003, mask=3.8):
+             etch=.0178, step=.003, mask=3.8, mask_on_copper=.0152,
+             mask_on_base=.0305):
     """Widths and clearances are in mm. Spacing selects a differential pair."""
     if min(width, gap, h, dk, copper, step) <= 0 or not 0 <= etch < width:
         raise ValueError("Invalid geometry for the cross-section")
     if spacing is not None and spacing <= 0:
         raise ValueError("Differential spacing must be positive")
+    if min(mask, mask_on_copper, mask_on_base) <= 0:
+        raise ValueError("Invalid solder mask parameters")
     pair = spacing is not None
     center = (width + spacing) / 2 if pair else 0
     # Mirror symmetry: RF is even; the differential odd mode is antisymmetric.
@@ -34,12 +37,12 @@ def estimate(width, spacing=None, gap=.20, *, h=.0994, dk=4.1, copper=.035,
     side = (x >= center+width/2+gap+etch*eta/2) & (y >= h) & (y <= h+copper)
     if pair and spacing > 2*gap:
         side |= (x <= (spacing-2*gap-etch*eta)/2) & (y >= h) & (y <= h+copper)
-    mask_top = np.where(trace | side, h+copper+.0152, h+.0305)
+    mask_top = np.where(trace | side, h+copper+mask_on_copper, h+mask_on_base)
     # Keep a coating above the foil where a vertical grid column meets copper.
     over_foil = (abs(x-center) <= (width-etch)/2) | (x >= center+width/2+gap+etch/2)
     if pair and spacing > 2*gap:
         over_foil |= x <= (spacing-2*gap-etch)/2
-    mask_top = np.where(over_foil, h+copper+.0152, mask_top)
+    mask_top = np.where(over_foil, h+copper+mask_on_copper, mask_top)
     eps = np.where(y < h, dk, np.where(y <= mask_top, mask, 1.0))
     ny, nx = x.shape
     known = trace | side
