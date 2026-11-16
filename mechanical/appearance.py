@@ -4,6 +4,7 @@ import argparse
 import math
 import cadquery as cq
 import generate as a4
+from integrated_layout import USB, CHIP
 
 ROOT = Path(__file__).resolve().parents[1]
 W, H, M = a4.W, a4.H, a4.M
@@ -28,20 +29,32 @@ def lower_edge(z,height):
     return a4.block(CX,H+M+LOWER_MARGIN/2-.5,W+2*M,LOWER_MARGIN+1,z,height)
 
 
-def tray():
-    body=a4.base().union(lower_edge(0,9.9)).intersect(frame_shape(0,-.1,10.2))
+def tray(integrated=False):
+    base=a4.base()
+    if integrated:
+        # Restore the old center opening and cut a socket only through the rear wall.
+        fill=a4.block(a4.MCU[0],-1.4,14,2.1,5.7,4.2)
+        base=base.union(fill).cut(a4.block(USB[0],-1.1,12.6,4.5,6.25,4.25))
+    body=base.union(lower_edge(0,9.9)).intersect(frame_shape(0,-.1,10.2))
     outline=frame_shape(2.9,-.1,.40).cut(frame_shape(3.55,-.15,.55))
     return body.cut(outline).cut(a4.cyl(CX,CY,DISK_RADIUS+.25,-.1,SEAT_DEPTH+.1))
 
 
-def face():
+def face(integrated=False):
     # Original 1.5 mm switch plate and microphone path are preserved. The outer
     # frame sits above the panel, away from the switches, to form a shallow well.
     plate=a4.panel().union(lower_edge(9.9,1.5)).intersect(frame_shape(0,6.2,5.3))
     lip=frame_shape(0,FACE-.1,1.0).edges(">Z").chamfer(.42)
     lip=lip.cut(frame_shape(2.65,FACE-.25,1.6,bottom_inset=2.05))
     # Match the panel notch at the edge. The module and its buttons remain accessible.
-    lip=lip.cut(a4.block(a4.MCU[0],-.9,a4.MODULE_NOTCH_WIDTH,5.2,FACE-.25,1.65))
+    if integrated:
+        y0=-2.9
+        plug=a4.block(a4.MCU[0],(a4.MODULE_NOTCH_END+y0)/2,a4.MODULE_NOTCH_WIDTH+.25,
+                      a4.MODULE_NOTCH_END-y0+.25,9.9,1.5)
+        plate=plate.union(plug.intersect(frame_shape(0,9.9,1.5)))
+        plate=plate.cut(a4.block(USB[0],-1.1,12.6,4.5,6.25,4.25))
+    else:
+        lip=lip.cut(a4.block(a4.MCU[0],-.9,a4.MODULE_NOTCH_WIDTH,5.2,FACE-.25,1.65))
     return plate.union(lip)
 
 
@@ -133,9 +146,9 @@ NAMES=("agent","new-chat","accept","decline","interrupt","find","ptt")
 PRINT_NAMES=("base","face","rear-disk","encoder-knob")+tuple(f"key-{n}" for n in NAMES)
 
 
-def export(out):
+def export(out,integrated=False):
     out.mkdir(parents=True,exist_ok=True)
-    t,p,d=tray(),face(),disk()
+    t,p,d=tray(integrated),face(integrated),disk()
     models={"base":t,"face":p.rotate((0,0,0),(1,0,0),180).translate((0,0,12.3)),
             "rear-disk":d,
             "encoder-knob":knob()}
@@ -179,4 +192,6 @@ def export(out):
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out",type=Path,default=ROOT/"build"/"appearance")
-    export(parser.parse_args().out.resolve())
+    parser.add_argument("--rev-b",action="store_true",help="Use the continuous face and Rev B rear USB port")
+    args=parser.parse_args()
+    export(args.out.resolve(),args.rev_b)

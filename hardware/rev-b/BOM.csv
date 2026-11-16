@@ -1,0 +1,53 @@
+﻿Refs,Qty,Part,Notes,CNY low,CNY high
+U2,1,TI SN74LV1T125DBVR,SOT-23-5; 1.8–5.5 V translator,0.7,2.5
+U3,1,TI TPS22918DBVR,SOT-23-6; 5 V LED rail load switch,1.5,5
+SW1-SW13,13,MX-compatible 3-pin or 5-pin switches,solder type; match SW4 and SW13 for the shared 2U cap,0.65,1.5
+SW14,1,ALPS EC11E15244G1,push encoder; confirm drawing / D shaft,5,12
+SW15,1,ALPS SKRHAAE010,no guide bosses; verify footprint before substituting,5,16
+D1-D19,19,Diodes Inc. BAT46W-7-F,SOD-123; low forward drop Schottky,0.08,0.3
+LED1-LED6,6,Worldsemi WS2812B-MINI-V6,3535; verify MINI-V6 (no X1 suffix),0.3,0.9
+R1,1,330 ohm,0603,0.02,0.1
+R2,1,1 kohm,0603,0.02,0.1
+R3-R7,5,22 kohm ±1%,0603; matrix column pull-ups,0.02,0.1
+C1-C7,7,100 nF X7R 16 V,0603,0.04,0.12
+C8,1,47 uF X5R 10 V,1206; ceramic,0.3,1
+C9,1,4.7 nF C0G 50 V,0603; load-switch slew-rate capacitor,0.04,0.2
+U4,1,ST MP34DT06JTR,C503097; top-port PDM; no wash or coating over inlet,3,9
+C11,1,100 nF X7R 16 V,0603; microphone bypass,0.04,0.12
+C12,1,1 uF X7R 16 V,0603; microphone bypass,0.05,0.2
+R8,1,33 ohm,0603; source series resistor on PDM clock,0.02,0.1
+R9,1,470 ohm,0603; limits contention at GPIO43 during reset,0.02,0.1
+MIC-SEAL,1,"0.8 mm closed-cell foam, ID 1.6 mm / OD 2.8 mm",ring on underside of plate; keep inlet clear,0.1,0.5
+CAPS-A,6,MX 1U frosted translucent keycaps,matte clear or milky PC; 17.9 mm reference width,0.7,2.5
+CAPS-C,5,MX 1U opaque command caps,add optional icon decals,0.35,1.2
+PRINT,1,PLA/PETG + translucent material,"base, plate, knobs, light pipes and dual-stem 2U cap",4.5,11
+SCREWS,4,M2x10 pan-head screws,self-tap into printed pilot holes,0.1,0.35
+FOIL,1,Copper adhesive foil + thin wire,14 mm square + 50 mm wire,0.2,1
+USB,1,USB-C data cable,reuse an existing cable,0,8
+PCB,1,4-layer FR4 1.6 mm,95 x 98 mm; quote exact controlled impedance stackup,,
+U1,1,ESP32-S3FH4R2,"QFN56, 4 MB QSPI flash, 2 MB PSRAM",,
+J2,1,HRO TYPE-C-31-M-12,USB 2.0 16-pin; shell soldered,0.8,2.8
+U5,1,TLV76133DCYR,3.3 V 1 A LDO; SOT-223; verify temperature,1.8,4.5
+U6,1,USBLC6-2SC6,USB data ESD; SOT-23-6,0.35,1.5
+R10-R11,2,22 ohm,0603 USB source damping,0.02,0.1
+R12-R13,2,5.1 kohm 1%,0603 Type-C sink Rd,0.02,0.1
+R14,1,10 kohm,0603 enable pull-up,0.02,0.1
+C13,1,1 uF 16 V X7R,0603 enable delay,0.05,0.2
+C10,1,2.2 uF 25 V X7R,0603 direct VBUS bypass; >=1 uF effective at 5.25 V including tolerance,,
+C14,1,4.7 uF 16 V X7R,"1206 VBUS damping branch, paired with R17",0.1,0.35
+R16,1,0.82 ohm 5% 0.5 W,1206 pulse-rated; check hot-plug waveform (4.50 A peak and 64.7 uJ maximum in separate model cases),,
+R17,1,1.5 ohm 5%,0603 VBUS damping branch; check pulse curve,,
+C15,1,22 uF 10 V X7R,"1206 3.3 V bulk, check DC bias",0.2,0.8
+C16,1,100 nF 16 V X7R,0603 module bypass,0.04,0.12
+X1,1,40 MHz 3225 4-pin crystal,10 pF CL; confirm exact part and trim,,
+L1,1,2.2 nH RF inductor,starting value; tune with VNA,,
+L2,1,Murata BLM18PG221SN1,RF supply ferrite,,
+C17-C18,2,15 pF C0G,starting crystal load values; trim,,
+C19-C20,0,RF matching positions,DNP until tuned,0,0
+C21,1,10 uF 10 V,RF rail bulk,,
+"C22-C23,C26",3,100 nF,supply bypass,,
+"C24-C25,C27",3,1 uF 10 V,supply bypass,,
+R15,1,10 kohm,BOOT pull-up,,
+J3,1,Hirose U.FL-R-SMT-1,"50 ohm, internal antenna",,
+ANT1,1,2.4 GHz 50 ohm adhesive FPC antenna,u.FL compatible; select and tune in enclosure,,
+TP1-TP5,5,Bare pads,internal service,0,0

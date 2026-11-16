@@ -3,6 +3,9 @@
 #include <BLEHIDDevice.h>
 #include <BLESecurity.h>
 #include <atomic>
+#if defined(GOWUJI_REV_B)
+#include <esp_bt.h>
+#endif
 
 namespace BleKeys {
 inline std::atomic<bool> authenticated{false};
@@ -48,6 +51,14 @@ inline void start() {
     0x05,0x07,0x19,0x00,0x29,0x73,0x15,0x00,0x25,0x73,0x75,0x08,0x95,0x06,0x81,0x00,0xc0
   };
   BLEDevice::init("GOWUJI BLE");
+#if defined(GOWUJI_REV_B)
+  // The Rev B load budget assumes <=0 dBm for advertising and new connections.
+  if (esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_N0) != ESP_OK ||
+      esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N0) != ESP_OK) {
+    BLEDevice::deinit(true);
+    return;
+  }
+#endif
   auto *security = new BLESecurity();
   security->setCapability(ESP_IO_CAP_NONE);
   security->setAuthenticationMode(true,false,true);

@@ -18,15 +18,24 @@ def clear(a,b):
     assert sum(s.Volume() for s in a.intersect(b).solids().vals()) < 1e-6
 
 
-def validate(out):
-    t,f,d=look.tray(),look.face(),look.fitted_disk()
+def validate(out,integrated=False):
+    t,f,d=look.tray(integrated),look.face(integrated),look.fitted_disk()
     pcb=a4.block(a4.W/2,a4.H/2,a4.W,a4.H,4.8,1.6)
     clear(t,pcb)
     clear(f,pcb)
     clear(t,d)
     clear(t,f)
-    module=a4.block(a4.MCU[0],a4.MCU[1]+11.75,18.3,23.8,8.4,4.85)
-    plug=a4.block(a4.MCU[0],-2.25,12.5,6,6.55,6.6)
+    if integrated:
+        x,y=look.CHIP
+        module=a4.block(x,y,7.3,7.3,6.4,1)
+        plug=a4.block(look.USB[0],-1.6,11.8,3.8,6.5,3.65)
+        socket=a4.block(look.USB[0],look.USB[1],9.2,7.4,6.4,3.3)
+        clear(f,socket)
+        clear(t,socket)
+        assert f.intersect(a4.block(a4.MCU[0],10,17,20,10,1.25)).val().Volume()>400
+    else:
+        module=a4.block(a4.MCU[0],a4.MCU[1]+11.75,18.3,23.8,8.4,4.85)
+        plug=a4.block(a4.MCU[0],-2.25,12.5,6,6.55,6.6)
     clear(f,module)
     clear(t,module)
     clear(f,plug)
@@ -59,8 +68,9 @@ def validate(out):
     print(f"Verified {len(look.PRINT_NAMES)} closed meshes, rear seat, USB opening, microphone and 4 mm key travel.")
 
 
-def render(out,cli):
-    src=(ROOT/"hardware/Gowuji-RevA.kicad_pcb").read_text(encoding="utf-8").rstrip()
+def render(out,cli,board):
+    src=board.read_text(encoding="utf-8").rstrip()
+    src=src.replace("${KIPRJMOD}/../models/","${KIPRJMOD}/models/")
     for n in look.NAMES+("bare",):
         src=src.replace(f'${{KIPRJMOD}}/models/mx-{n}.step',(out/f"preview-mx-{n}.step").as_posix())
     src=src.replace("${KIPRJMOD}/models/ec11.step",(out/"preview-encoder.step").as_posix())
@@ -71,7 +81,10 @@ def render(out,cli):
       (attr board_only exclude_from_bom exclude_from_pos_files)
       (model {case} (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0))))
     )\n''',encoding="utf-8")
-    for name,side,angle in (("front","top","330,0,18"),("rear","bottom","28,0,160")):
+    angles=[("front","top","330,0,18"),("rear","bottom","28,0,160")]
+    if board.stem=="Gowuji-RevB":
+        angles.append(("usb-edge","back","12,0,0"))
+    for name,side,angle in angles:
         subprocess.run([cli,"pcb","render","--width","1300","--height","960","--background","opaque",
                         "--quality","high","--side",side,"--rotate",angle,"--zoom",".76",
                         "--output",str(out/f"{name}.png"),str(preview)],cwd=ROOT,check=True)
@@ -94,8 +107,10 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out",type=Path,default=ROOT/"build/appearance")
     parser.add_argument("--kicad-cli",default="kicad-cli")
+    parser.add_argument("--rev-b-board",type=Path)
     args=parser.parse_args()
     out=args.out.resolve()
-    validate(out)
-    render(out,args.kicad_cli)
-    package(out)
+    validate(out,bool(args.rev_b_board))
+    render(out,args.kicad_cli,args.rev_b_board or ROOT/"hardware/Gowuji-RevA.kicad_pcb")
+    if not args.rev_b_board:
+        package(out)

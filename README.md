@@ -8,6 +8,7 @@
 | BOM | [BOM.csv](hardware/BOM.csv) |
 | 3D 打印 | [底壳](mechanical/base.stl)、[面板](mechanical/plate.stl)、[旋钮](mechanical/dial.stl)、[摇杆帽](mechanical/joystick-cap.stl)、[导光件](mechanical/light-pipes.stl)、[2U 语音键帽](mechanical/ptt-keycap-2u.stl)、[USB 盖](mechanical/usb-cover.stl)、[轴孔试片](mechanical/mx-fit-coupon.stl)、[装配 STEP](mechanical/fit-reference.step) |
 | 可选外壳 | [按参考图制作的凹刻圆盘和正面选件](docs/appearance.md) |
+| Rev B 布线已闭合，待打样验证 | [直接贴装 ESP32-S3、后置 USB-C 和连续正面](docs/rev-b.md) |
 | 固件和烧录 | [Arduino 工程](firmware/Gowuji/)、[烧录脚本](firmware/flash.py) |
 | Codex 伴侣 | [Python 主机程序](host/gowuji.py) |
 | 制造与验证 | [打样和装配](docs/assembly.md)、[验证记录](docs/validation.md) |

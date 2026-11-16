@@ -1,0 +1,6 @@
+(footprint "Probe" (version 20241229) (generator "pcbnew") (layer "F.Cu") (uuid "324be671-69cc-541c-a66e-a5f8017c204a")  (attr smd)
+(property "Reference" "REF**" (at 0 -2.15 0) (layer "F.SilkS")  (effects (font (size 0.8 0.8) (thickness 0.12))))
+(property "Value" "Probe" (at 0 0 0) (layer "F.Fab") (effects (font (size 0.8 0.8) (thickness 0.12))))
+(fp_rect (start -0.7 -0.7) (end 0.7 0.7) (stroke (width 0.1) (type default)) (fill none) (layer "F.Fab"))
+(fp_rect (start -0.8 -0.8) (end 0.8 0.8) (stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))
+(pad "1" smd rect (at 0 0) (size 1.4 1.4)  (layers "F.Cu" "F.Paste" "F.Mask")  (uuid "f093cccf-f327-5a19-ae08-7fae324fa5ae")))

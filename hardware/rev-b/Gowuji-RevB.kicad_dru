@@ -1,0 +1,12 @@
+(version 1)
+(rule "QFN local fanout trace clearance"
+ (layer "F.Cu")
+ (condition "((A.intersectsArea('QFN_FANOUT') && B.intersectsArea('QFN_FANOUT')) || (A.intersectsArea('QFN_SOUTH') && B.intersectsArea('QFN_SOUTH')) || (A.intersectsArea('QFN_NORTH') && B.intersectsArea('QFN_NORTH'))) && (A.Type == 'Track' || B.Type == 'Track')")
+ (constraint clearance (min 0.14mm)))
+(rule "QFN fanout drilled vias"
+ (condition "A.Type == 'Via' && (A.insideArea('QFN_FANOUT') || A.insideArea('QFN_SOUTH') || A.insideArea('QFN_NORTH'))")
+ (constraint hole_size (min 0.20mm)))
+
+(rule "QFN fanout via diameter"
+ (condition "A.Type == 'Via' && (A.insideArea('QFN_FANOUT') || A.insideArea('QFN_SOUTH') || A.insideArea('QFN_NORTH'))")
+ (constraint via_diameter (min 0.40mm)))
