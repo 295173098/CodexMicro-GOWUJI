@@ -87,3 +87,7 @@
 - 复核报告和渲染在 `build/preflight-2026-11-17/`。本轮未改设计、交厂包或候选，未下单、未推送、未发布。
 
 - 2026-11-17（第26轮，Rev B 3D 渲染）：用 KiCad 10.0.7 CLI 从 `hardware/rev-b/Gowuji-RevB.kicad_pcb` 高质量渲染顶部斜视、底部斜视和正上方三张 1800×1350 图，输出 `build/preflight-2026-11-17/render/revb-iso-top.png`、`revb-iso-bottom.png`、`revb-top.png`。已目视检查键位、旋钮、摇杆、触摸片、丝印和底部地铜/过孔显示正常；键帽为项目简化模型，当前 `build/` 中没有带壳装配预览文件，故未渲染外壳。未改设计或交厂包，未推送、未下单。
+
+- 2026-11-17（第27轮，PCB 与整机 3D 重渲染）：用 uv 建 `.local/cq-venv`（Python 3.12 + cadquery 2.8）重新生成 Rev B 外壳与键帽模型到 `build/rev-b-shell/`，`mechanical/appearance.py --rev-b` 导出 base/face/enclosure/7 个键帽/旋钮及预览 STEP；`tools/review_appearance.py --rev-b-board hardware/rev-b/Gowuji-RevB.kicad_pcb` 校验 11 个闭合网格、后盖座、USB 开口、麦克风和 4 mm 键程通过，并生成 `appearance-preview.kicad_pcb`。
+- KiCad 10.0.7 渲染：PCB 板级顶/底斜视 `build/preflight-2026-11-17/render/revb-pcb-iso-top.png`、`revb-pcb-iso-bottom.png`；整机（带外壳）前/后/USB 侧 `build/rev-b-shell/revb-product-front.png`、`revb-product-rear.png`、`revb-product-usb.png`，均 1992×1488、高质量、地板阴影和透视。已目视确认连续正面、六状态键（统一 agent 图标）、动作键图标、旋钮/摇杆、触摸标记、后盖圆盘凹刻和 USB 开口位置；USB-C 精确 3D 模型在本机 KiCad 10 库中缺失，开口处会看到裸 PCB 与丝印，仅为渲染外观问题。
+- 未改设计、原理图、PCB、交厂包或候选；新增文件均在 `build/` 和 `.local/`（已忽略）。未推送、未下单。
