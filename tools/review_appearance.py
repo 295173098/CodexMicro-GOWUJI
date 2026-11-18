@@ -82,7 +82,7 @@ def render(out,cli,board):
       (model {case} (offset (xyz 0 0 0)) (scale (xyz 1 1 1)) (rotate (xyz 0 0 0))))
     )\n''',encoding="utf-8")
     angles=[("front","top","330,0,18"),("rear","bottom","28,0,160")]
-    if board.stem=="Gowuji-RevB":
+    if board.stem in ("Gowuji-RevB","Gowuji-RevC"):
         angles.append(("usb-edge","back","12,0,0"))
     for name,side,angle in angles:
         subprocess.run([cli,"pcb","render","--width","1300","--height","960","--background","opaque",

@@ -14043,7 +14043,7 @@
 			)
 		)
 	)
-	(gr_text "GOWUJI / REV B"
+	(gr_text "GOWUJI / REV C"
 		(at 19 4.2 0)
 		(layer "F.SilkS")
 		(uuid "085365b0-b045-460a-8769-aa900238e887")

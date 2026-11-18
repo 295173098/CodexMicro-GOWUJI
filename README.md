@@ -1,6 +1,29 @@
-# GOWUJI Macro Pad · Rev A4
+# GOWUJI Macro Pad
+
+<p align="center">
+  <img src="docs/images/rev-c-product-front.png" alt="GOWUJI Rev C 整机 3D 渲染（带外壳）" width="820">
+</p>
+
+<p align="center"><sub><b>Rev C 工程样机</b> · 带壳 3D 渲染（CAD 渲染，非实物照片）</sub></p>
+
+| **PCB 正面** · 4 层 · 95 × 98 mm | **PCB 背面** · 电源与地平面 |
+| :---: | :---: |
+| <img src="docs/images/rev-c-pcb-top.png" alt="GOWUJI Rev C PCB 正面 3D 渲染" width="100%"> | <img src="docs/images/rev-c-pcb-bottom.png" alt="GOWUJI Rev C PCB 背面 3D 渲染" width="100%"> |
+
+> **当前工程候选：Rev C（REVIEW ONLY）**。四层板、直接贴装 ESP32-S3、独立 LED 5 V 阻尼支路；ERC/DRC/一致性 0，板级仿真通过，但**尚未下单、未做实物验证**。源文件在 [hardware/rev-c/](hardware/rev-c/)，验证记录见 [AGENTS.md](AGENTS.md)；Rev B 下单说明见 [docs/rev-b-order.md](docs/rev-b-order.md)。
 
 > **Rev B PCB + 工厂贴装打样**：使用[Rev B 下单说明](docs/rev-b-order.md)和本地 `build/rev-b-pcba.zip`；工厂 CAM/供料/旋转回签后做 3–5 套工程样机。下方 A4 的双层板和成本不能代用。
+
+<details>
+<summary>更多 3D 渲染</summary>
+
+| 背面 | 后侧 USB-C | PCB 正上方 |
+| :---: | :---: | :---: |
+| <img src="docs/images/rev-c-product-rear.png" width="100%"> | <img src="docs/images/rev-c-product-usb.png" width="100%"> | <img src="docs/images/rev-c-pcb-flat.png" width="100%"> |
+
+</details>
+
+## Rev A4 DIY 基线
 
 按 [OpenAI × Work Louder Codex Micro](https://openai.com/zh-Hans-CN/supply/co-lab/work-louder/) 键位设计的 DIY 控制台。采用 95 × 98 mm 双层 PCB、Waveshare ESP32-S3-Zero-M、13 个直焊 MX 轴（其中两个共用 2U 语音键帽）、六颗独立状态灯、五向摇杆、带按压旋钮和触摸片。外壳、面板、旋钮、导光件和 2U 键帽可打印。当前是 **Alpha 样机设计**，尚未做实物验证。
 
