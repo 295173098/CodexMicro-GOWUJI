@@ -144,9 +144,13 @@ def thermal(out: Path = OUT):
 
 
 def main():
+    global KXY
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--k-xy", type=float, default=KXY,
+                    help="effective in-plane conductivity, W/mK")
     args = ap.parse_args()
+    KXY = args.k_xy
     args.out.mkdir(parents=True, exist_ok=True)
     print(json.dumps(thermal(args.out), ensure_ascii=False, indent=1))
 

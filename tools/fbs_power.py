@@ -11,7 +11,8 @@ IR-drop model:
 PDN model:
   * 3.3 V rail: LDO closed-loop source impedance, bulk/decoupling capacitors,
     trace spreading inductance and plane capacitance
-  * 5 V LED rail: load switch, 47 uF bulk, 100 nF local capacitors
+  * 5 V LED rail: load switch, 47 uF bulk, 100 nF local capacitors.  R18 and
+    C28 are upstream of U3 and do not load the LED_5V output PDN directly.
 """
 from __future__ import annotations
 
@@ -197,19 +198,21 @@ def path_resistance(nodes, edges, src, dst):
         return float("inf")
 
 
-def ir_drop(out: Path = OUT, r16: float = 0.82):
+def ir_drop(out: Path = OUT, r16: float = 0.82, r18: float = 1.0):
     board = json.loads((out / "board.json").read_text())
-    # Net ids from the extracted board.
+    # Net names from the extracted board.
     nets = board["nets"]
-    ids = {name.lstrip("/"): nid for nid, name in nets.items()}
+    ids = {name.lstrip("/"): name for name in nets.values()}
+    rev_c = "VBUS_LED" in ids
     n_vbus_raw = ids["VBUS_RAW"]
     n_vbus = ids["VBUS"]
+    n_vbus_led = ids.get("VBUS_LED")
     n_led = ids["LED_5V"]
     n_v3 = ids["V3V3"]
     n_rf = ids["RF_3V3"]
 
-    # Power tree graph: USB-C -> R16 -> VBUS -> U3 -> LED_5V; V3V3 and RF_3V3
-    # are a separate 3.3 V tree fed by U5, joined at L2.
+    # Power tree graph: USB-C -> R16 -> VBUS (LDO); Rev C adds USB-C -> R18 ->
+    # VBUS_LED -> U3 -> LED_5V.  V3V3/RF_3V3 are fed by U5, joined at L2.
     all_ids = {n_vbus_raw, n_vbus, n_led, n_v3, n_rf}
     extra = [
         ("R16", "1", "R16", "2", r16, f"R16 {r16}R"),
@@ -217,6 +220,9 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
         ("L2", "1", "L2", "2", 0.35, "L2 BLM18PG221 DCR"),
         ("U2", "5", "U3", "6", 0.010, "U2 VCC stub"),
     ]
+    if rev_c:
+        all_ids.add(n_vbus_led)
+        extra.insert(1, ("R18", "1", "R18", "2", r18, f"R18 {r18}R"))
     nodes, edges, pad_nodes = build_graph(board, all_ids, extra)
 
     # Load allocation (A). Worst case follows the 582 mA unrestricted BLE
@@ -237,25 +243,27 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
     loads_led = {(f"LED{i}", "1"): led_current for i in range(1, 7)}
     loads_led[("U2", "5")] = 0.005
     v3_total = sum(loads_v3.values()) + sum(loads_rf.values())
-    # LDO input current = 3.3 V load / (5 V * 0.9); LED rail from VBUS.
+    # LDO input current = 3.3 V load / (5 V * 0.9).
     vbus_ldo = v3_total * 3.3 / (5.0 * 0.90)
     loads_vbus = {
         ("U5", "3"): vbus_ldo,
-        ("U3", "1"): 0.060,
         ("U6", "5"): 0.001,
     }
-    loads_raw = {("R16", "1"): vbus_ldo + 0.060 + 0.001}
+    led_rail_total = sum(loads_led.values())
 
     # Two separate 3.3 V/5 V source trees: solve VBUS/RAW/LED with source at
     # J2.A4, and V3V3/RF with source at U5.2.  The graph is shared, but the
     # source differs; solve once with the USB source and once with the LDO.
     results = {}
     V_usb, src_usb, un_usb = solve_ir(nodes, edges, pad_nodes, ("J2", "A4"),
-                                     {**loads_raw, **loads_vbus, **loads_led})
-    for label, pad in (("J2.A4 VBUS_RAW", ("J2", "A4")),
-                       ("U5.3 LDO in", ("U5", "3")),
-                       ("U3.1 LED switch in", ("U3", "1")),
-                       ("U3.6 LED rail", ("U3", "6"))):
+                                     {**loads_vbus, **loads_led})
+    probes = [("J2.A4 VBUS_RAW", ("J2", "A4")),
+              ("U5.3 LDO in", ("U5", "3")),
+              ("U3.1 LED switch in", ("U3", "1")),
+              ("U3.6 LED rail", ("U3", "6"))]
+    if rev_c:
+        probes.insert(1, ("R18.1 VBUS_RAW", ("R18", "1")))
+    for label, pad in probes:
         idx = pad_nodes[pad][0]
         results[label] = {"V": float(V_usb[idx]),
                           "drop_mV": float(-V_usb[idx] * 1000)}
@@ -292,12 +300,12 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
         nodes, edges, src_usb, pad_nodes[("U5", "3")][0]) * 1000
 
     # GND plane upper bound: total return current through the plane stack.
-    # The plane is continuous on In1/In2 and stitched by 40 vias; a conservative
+    # The plane is continuous on In1/In2 and stitched by vias; a conservative
     # spreading estimate is 1 mOhm per square over a 95 mm path.
-    results["GND_plane_estimate_mV"] = (vbus_ldo + 0.060) * 1.0 * (95 / 95)
+    results["GND_plane_estimate_mV"] = (vbus_ldo + led_rail_total + 0.001) * 1.0 * (95 / 95)
 
     # Actual rail voltages at the USB host limits.  USB 2.0 allows 4.75-5.25 V
-    # at the host; the board sees the drop through the connector and R16.
+    # at the host; the board sees the drop through the connector, R16 and R18.
     drops = {
         "U5_in": -results["U5.3 LDO in"]["V"],
         "U3_in": -results["U3.1 LED switch in"]["V"],
@@ -308,7 +316,7 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
                         ("5.25V host", 5.25)):
         source_cases[label] = {
             "VBUS_at_U5_V": vbus - drops["U5_in"],
-            "VBUS_at_U3_V": vbus - drops["U3_in"],
+            "VBUS_LED_at_U3_V": vbus - drops["U3_in"],
             "LED_rail_V": vbus - drops["LED"],
             "LDO_input_ok": (vbus - drops["U5_in"]) >= 3.8,
             "LED_ok": (vbus - drops["LED"]) >= 4.5,
@@ -319,8 +327,9 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
             "V3V3_total_mA": v3_total * 1000,
             "RF_total_mA": sum(loads_rf.values()) * 1000,
             "LED_total_mA": 60.0,
+            "LED_rail_total_mA": led_rail_total * 1000,
             "VBUS_ldo_mA": vbus_ldo * 1000,
-            "VBUS_total_mA": (vbus_ldo + 0.060 + 0.001) * 1000,
+            "VBUS_RAW_total_mA": (vbus_ldo + led_rail_total + 0.001) * 1000,
         },
         "results": results,
         "source_cases": source_cases,
@@ -331,6 +340,7 @@ def ir_drop(out: Path = OUT, r16: float = 0.82):
         },
         "graph": {"nodes": len(nodes), "edges": len(edges)},
         "R16_ohm": r16,
+        "R18_ohm": r18,
         "unconnected_loads": sorted(set(un_usb + un_3v3)),
     }
     (out / "ir_drop.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
@@ -402,6 +412,8 @@ def pdn(out: Path = OUT):
             "C15_eff_uF": 10.0, "C25_C27_eff_uF": 0.6,
             "C8_eff_uF": 30.0, "LDO_Rout_mOhm": 50.0,
             "trace_L_nH_per_mm": 0.35,
+            "R18_ohm": 1.0, "C28_eff_uF": 4.7,
+            "note": "R18/C28 are upstream of U3; LED_5V PDN is measured at U3 output",
         },
     }
     (out / "pdn.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
@@ -413,6 +425,7 @@ def main():
     ap.add_argument("stage", choices=["ir", "pdn", "all"])
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--r16", type=float, default=0.82)
+    ap.add_argument("--r18", type=float, default=1.0)
     ap.add_argument("--sweep", action="store_true")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -429,7 +442,7 @@ def main():
                 json.dumps(sweep, ensure_ascii=False, indent=1))
             print(json.dumps(sweep, ensure_ascii=False, indent=1))
         else:
-            print(json.dumps(ir_drop(args.out, args.r16), ensure_ascii=False, indent=1))
+            print(json.dumps(ir_drop(args.out, args.r16, args.r18), ensure_ascii=False, indent=1))
     if args.stage in ("pdn", "all"):
         print(json.dumps(pdn(args.out), ensure_ascii=False, indent=1))
 

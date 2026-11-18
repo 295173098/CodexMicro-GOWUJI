@@ -1,0 +1,44 @@
+Refs,Manufacturer,MPN,Process,Specification,Source
+U1,Espressif,ESP32-S3FH4R2,SMT,QFN56 4MB flash 2MB PSRAM; no substitution,https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf
+U2,Texas Instruments,SN74LV1T125DBVR,SMT,SOT-23-5 level translator,https://www.ti.com/lit/ds/symlink/sn74lv1t125.pdf
+U3,Texas Instruments,TPS22918DBVR,SMT,SOT-23-6 load switch,https://www.ti.com/lit/ds/symlink/tps22918.pdf
+U4,STMicroelectronics,MP34DT06JTR,SMT,Top-port PDM; no wash; no coating; C503097,https://www.st.com/resource/en/datasheet/mp34dt06j.pdf
+U5,Texas Instruments,TLV76133DCYR,SMT,SOT-223 3.3V; tab is OUT; BOTTOM,https://www.ti.com/lit/ds/symlink/tlv761.pdf
+U6,STMicroelectronics,USBLC6-2SC6,SMT,SOT-23-6; do not substitute SC6 with P6,https://www.st.com/resource/en/datasheet/usblc6-2.pdf
+J2,HRO,TYPE-C-31-M-12,HYBRID,16 signal contacts; four plated shell slots; quote shell solder separately,https://www.lcsc.com/search?q=TYPE-C-31-M-12
+J3,Hirose,U.FL-R-SMT-1(10),SMT,50ohm U.FL socket; match exact Hirose outline,https://www.hirose.com/product/series/U.FL
+X1,Abracon,ABM8-40.000MHZ-10-D1G-T,SMT,3225 40MHz fundamental CL10pF tolerance10ppm stability15ppm; pins2/4 GND,https://abracon.com/Resonators/ABM8.pdf
+L1,Murata,LQW18AN1N8C8ZD,SMT,0603 1.8nH +/-0.2nH RF wirewound; initial matching value,https://www.murata.com/en-global/products/productdetail?partno=LQW18AN1N8C8Z%23
+L2,Murata,BLM18PG221SN1D,SMT,0603 220ohm at100MHz supply ferrite,https://www.murata.com/en-global/products/productdetail?partno=BLM18PG221SN1%23
+D1-D19,Diodes Incorporated,BAT46W-7-F,SMT,SOD-123; pad1 cathode stripe,https://www.diodes.com/assets/Datasheets/ds30216.pdf
+LED1-LED6,Worldsemi,WS2812B-MINI-V6,SMT,3535; no X1 variant; C52941386; pad3 GND marked corner,https://www.world-semi.com/downloads/datasheets/en/ws2812b-mini-v6-1.0.pdf
+SW15,Alps Alpine,SKRHAAE010,SMT,Five-way switch without guide bosses; do not substitute,https://tech.alpsalpine.com/e/products/detail/SKRHAAE010/
+SW14,Alps Alpine,EC11E15244G1,SECONDARY,Through-hole encoder; factory secondary assembly quote,https://tech.alpsalpine.com/e/products/detail/EC11E15244G1/
+SW1-SW13,Gateron,KS-9 red 3-pin MX-compatible,SECONDARY,Customer-supplied 13 switches; identical SW4/SW13 under 2U key; confirm supplied batch drawing,https://www.gateron.com/
+R1,Yageo,RC0603FR-07330RL,SMT,0603 330ohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R2,Yageo,RC0603FR-071KL,SMT,0603 1kohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R3-R7,Yageo,RC0603FR-0722KL,SMT,0603 22kohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R8,Yageo,RC0603FR-0733RL,SMT,0603 33ohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R9,Yageo,RC0603FR-07470RL,SMT,0603 470ohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R10-R11,Yageo,RC0603FR-0722RL,SMT,0603 22ohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R12-R13,Yageo,RC0603FR-075K1L,SMT,0603 5.1kohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R14-R15,Yageo,RC0603FR-0710KL,SMT,0603 10kohm 1% 0.1W,https://www.yageo.com/en/ProductSearch
+R16,Bourns,CRM1206-FX-R820ELF,SMT,1206 0.82ohm 1% 0.5W pulse curve reviewed; BOTTOM; no generic substitute,https://www.bourns.com/docs/product-datasheets/crm0805_1206_2010.pdf
+R17,Vishay,CRCW06031R50FKEAHP,SMT,0603 1.5ohm 1% 0.33W pulse-proof HP; BOTTOM; no generic substitute,https://www.vishay.com/docs/20043/crcwhpe3.pdf
+R18,Bourns,CRM1206-FX-R100ELF,SMT,1206 1.0ohm 1% 0.5W pulse-rated; TOP LED branch; no generic substitute,https://www.bourns.com/docs/product-datasheets/crm0805_1206_2010.pdf
+R20,Bourns,CRM1206-FX-2R20ELF,SMT,1206 2.2ohm 1% 0.5W pulse-rated; TOP LED input snubber; no generic substitute,https://www.bourns.com/docs/product-datasheets/crm0805_1206_2010.pdf
+"C1-C7,C11,C16,C22-C23,C26",Murata,GRM188R71C104KA01D,SMT,0603 100nF 16V X7R 10%,https://ds.murata.com/simsurfing/mlcc.html
+C8,Murata,GRM31CR61A476KE15L,SMT,1206 47uF 10V X5R 10%; effective cap checked; height1.8mm,https://ds.murata.com/simsurfing/mlcc.html
+C9,Murata,GRM1885C1H473JA01D,SMT,0603 47nF 50V C0G 5%; TPS22918 CT ramp ~129ms at 5V,https://ds.murata.com/simsurfing/mlcc.html
+C10,Murata,GRM188Z71E225KE43D,SMT,0603 2.2uF 25V X7R 10%; >=1uF effective at5.25V; no generic substitute,https://ds.murata.com/simsurfing/mlcc.html
+"C12-C13,C24-C25,C27",Murata,GRM188R71C105KA12D,SMT,0603 1uF 16V X7R 10%,https://ds.murata.com/simsurfing/mlcc.html
+C14,Murata,GRM31CR71C225KA12L,SMT,1206 2.2uF 16V X7R 10%; VBUS damping capacitor; reduced from 4.7uF for hot-plug charge,https://ds.murata.com/simsurfing/mlcc.html
+C28,Murata,GRM31CR71C475KA01L,SMT,1206 4.7uF 16V X7R 10%; VBUS_LED damping capacitor; paired with R20,https://ds.murata.com/simsurfing/mlcc.html
+C15,Murata,GRM31CR71A226KE15L,SMT,1206 22uF 10V X7R 10%; >=10uF effective; height1.8mm,https://ds.murata.com/simsurfing/mlcc.html
+C28,Murata,GRM31CR61C106KA01L,SMT,1206 10uF 16V X5R 10%; VBUS_LED branch bulk; verify effective capacitance at 5V,https://ds.murata.com/simsurfing/mlcc.html
+C17-C18,Murata,GRM1885C1H150JA01D,SMT,0603 15pF 50V C0G 5%; tune crystal after first article,https://ds.murata.com/simsurfing/mlcc.html
+C21,Murata,GRM188R61A106ME69D,SMT,0603 10uF 10V X5R 20%; RF supply bulk,https://ds.murata.com/simsurfing/mlcc.html
+C19-C20,,,DNP,RF matching reserves; DO NOT POPULATE,
+J1,,,MANUAL,Touch foil lead; owner adds after enclosure assembly,
+TP1-TP5,,,BARE_PAD,Probe pads; no fitted component,
+H1-H4,,,MECHANICAL,NPTH mounting holes; no fitted PCB component,

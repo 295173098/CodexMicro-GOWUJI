@@ -82,6 +82,22 @@ def fnum(node, name, index=1, default=0.0):
         return default
 
 
+def net_name(node, table):
+    """Return the net name from a (net ...) node.
+
+    KiCad 9/10 boards may store a numeric net id with a name table, or may
+    store the net name directly.  Normalize both to the name string.
+    """
+    if not node:
+        return ""
+    if len(node) >= 3:
+        return str(node[2])
+    token = str(node[1])
+    if token.isdigit():
+        return table.get(token, token)
+    return token
+
+
 # ---------------------------------------------------------------- board parse
 def parse_board(path: Path = BOARD) -> dict:
     text = path.read_text(encoding="utf-8")
@@ -149,8 +165,8 @@ def parse_board(path: Path = BOARD) -> dict:
             dx = dvals[0] if dvals else 0.0
             dy = dvals[1] if len(dvals) > 1 else dx
             net = child(pad, "net")
-            nid = str(net[1]) if net else "0"
-            nname = str(net[2]) if net and len(net) > 2 else nets.get(nid, "")
+            nname = net_name(net, nets)
+            nid = nname
             layers = child(pad, "layers")
             player = [x for x in layers[1:] if isinstance(x, str)] if layers else []
             # Absolute pad position: footprint placement + pad offset (rotated).
@@ -181,7 +197,7 @@ def parse_board(path: Path = BOARD) -> dict:
             "x2": float(e[1]), "y2": float(e[2]),
             "w": fnum(seg, "width", 1, 0.0),
             "layer": atom(seg, "layer", 1, ""),
-            "net": str(net[1]) if net else "0",
+            "net": net_name(net, nets),
         })
 
     vias = []
@@ -193,14 +209,14 @@ def parse_board(path: Path = BOARD) -> dict:
             "x": float(at[1]), "y": float(at[2]),
             "size": fnum(via, "size", 1, 0.0),
             "drill": fnum(via, "drill", 1, 0.0),
-            "net": str(net[1]) if net else "0",
+            "net": net_name(net, nets),
             "layers": [x for x in layers[1:] if isinstance(x, str)] if layers else [],
         })
 
     zones = []
     for zone in children(kicad, "zone"):
         net = child(zone, "net")
-        nname = atom(zone, "net_name", 1, "")
+        nname = net_name(net, nets)
         zlayers = []
         lyr = child(zone, "layer")
         if lyr:
@@ -220,15 +236,26 @@ def parse_board(path: Path = BOARD) -> dict:
                 polys.append({"layer": atom(fp, "layer", 1, zlayers[0] if zlayers else ""),
                               "points": poly})
         zones.append({
-            "net": str(net[1]) if net else "0",
+            "net": nname,
             "net_name": nname,
             "layers": zlayers,
             "polygons": polys,
         })
 
+    all_names = sorted({
+        p["net"] for p in pads
+    } | {
+        s["net"] for s in segments
+    } | {
+        v["net"] for v in vias
+    } | {
+        z["net"] for z in zones
+    } - {""})
+    nets_out = {name: name for name in all_names}
+
     return {
         "path": str(path),
-        "nets": nets,
+        "nets": nets_out,
         "stackup": stackup,
         "footprints": footprints,
         "pads": pads,
@@ -288,8 +315,8 @@ def summarize(board: dict) -> dict:
     }
 
 
-def extract(out: Path = OUT) -> dict:
-    board = parse_board()
+def extract(out: Path = OUT, board_path: Path = BOARD) -> dict:
+    board = parse_board(board_path)
     summary = summarize(board)
     out.mkdir(parents=True, exist_ok=True)
     (out / "board.json").write_text(json.dumps(board, ensure_ascii=False, indent=1))
@@ -301,9 +328,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("stage", choices=["extract"])
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--board", type=Path, default=BOARD)
     args = ap.parse_args()
     if args.stage == "extract":
-        s = extract(args.out)
+        s = extract(args.out, args.board)
         print(json.dumps(s, ensure_ascii=False, indent=1)[:6000])
 
 

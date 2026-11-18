@@ -1,0 +1,6 @@
+(footprint "Mount" (version 20241229) (generator "pcbnew") (layer "F.Cu") (uuid "0c24a1a4-b86f-5656-b5ac-4b500d3f834b")  (attr board_only exclude_from_pos_files exclude_from_bom)
+(property "Reference" "REF**" (at 0 -4.2 0) (layer "F.SilkS") (hide yes) (effects (font (size 0.8 0.8) (thickness 0.12))))
+(property "Value" "Mount" (at 0 0 0) (layer "F.Fab") (effects (font (size 0.8 0.8) (thickness 0.12))))
+(fp_rect (start -2.75 -2.75) (end 2.75 2.75) (stroke (width 0.1) (type default)) (fill none) (layer "F.Fab"))
+(fp_rect (start -2.85 -2.85) (end 2.85 2.85) (stroke (width 0.05) (type default)) (fill none) (layer "F.CrtYd"))
+(pad "" np_thru_hole circle (at 0 0) (size 2.4 2.4) (drill 2.4) (layers "*.Cu" "*.Mask")  (uuid "18431452-8bf8-58b7-97fd-3d7439c83b95")))

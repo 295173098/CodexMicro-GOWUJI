@@ -7,7 +7,7 @@ USB:
   * 15 kOhm host pull-downs, 10 pF host input; eye height and rise time
 RF:
   * 8.38 mm, 0.16 mm RF_FEED line from the 2D field solver
-  * series 2.2 nH tuning inductor into a 50 ohm load; S11 at 2.4 GHz
+  * series 1.8 nH tuning inductor into a 50 ohm load; S11 at 2.4 GHz
 """
 from __future__ import annotations
 
@@ -138,14 +138,14 @@ Rn2 nhost 0 15k
     return result
 
 
-def rf_line(out: Path = OUT):
+def rf_line(out: Path = OUT, l1_nh: float = 1.8):
     # 2D field solver for the 0.16 mm RF trace over 0.0994 mm prepreg.
     z0, eps_eff = estimate(0.16)
     f = 2.4e9
     length = 8.381e-3
     beta = 2 * math.pi * f * math.sqrt(eps_eff) / C_LIGHT
-    # Series 2.2 nH tuning inductor into a 50 ohm ESP32 RF port.
-    zl = 50.0 + 1j * 2 * math.pi * f * 2.2e-9
+    # Series L1 tuning inductor into a 50 ohm ESP32 RF port.
+    zl = 50.0 + 1j * 2 * math.pi * f * l1_nh * 1e-9
     # Lossless line input impedance.
     z_in = z0 * (zl + 1j * z0 * math.tan(beta * length)) / (
         z0 + 1j * zl * math.tan(beta * length))
@@ -162,7 +162,8 @@ def rf_line(out: Path = OUT):
         "length_mm": length * 1e3,
         "beta_l_deg": math.degrees(beta * length),
         "S11_line_50ohm_dB": s11_line_db,
-        "S11_with_2n2H_dB": s11_db,
+        "S11_with_L1_dB": s11_db,
+        "L1_nH": l1_nh,
         "pass_criteria": {"S11_dB": -10.0},
         "pass_line": bool(s11_line_db <= -10.0),
         "pass_matching": bool(s11_db <= -10.0),
@@ -176,12 +177,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("stage", choices=["usb", "rf", "all"])
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--l1-nh", type=float, default=1.8)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     if args.stage in ("usb", "all"):
         print(json.dumps(usb_eye(args.out), ensure_ascii=False, indent=1))
     if args.stage in ("rf", "all"):
-        print(json.dumps(rf_line(args.out), ensure_ascii=False, indent=1))
+        print(json.dumps(rf_line(args.out, args.l1_nh), ensure_ascii=False, indent=1))
 
 
 if __name__ == "__main__":
