@@ -35,7 +35,6 @@ C10,Murata,GRM188Z71E225KE43D,SMT,0603 2.2uF 25V X7R 10%; >=1uF effective at5.25
 C14,Murata,GRM31CR71C225KA12L,SMT,1206 2.2uF 16V X7R 10%; VBUS damping capacitor; reduced from 4.7uF for hot-plug charge,https://ds.murata.com/simsurfing/mlcc.html
 C28,Murata,GRM31CR71C475KA01L,SMT,1206 4.7uF 16V X7R 10%; VBUS_LED damping capacitor; paired with R20,https://ds.murata.com/simsurfing/mlcc.html
 C15,Murata,GRM31CR71A226KE15L,SMT,1206 22uF 10V X7R 10%; >=10uF effective; height1.8mm,https://ds.murata.com/simsurfing/mlcc.html
-C28,Murata,GRM31CR61C106KA01L,SMT,1206 10uF 16V X5R 10%; VBUS_LED branch bulk; verify effective capacitance at 5V,https://ds.murata.com/simsurfing/mlcc.html
 C17-C18,Murata,GRM1885C1H150JA01D,SMT,0603 15pF 50V C0G 5%; tune crystal after first article,https://ds.murata.com/simsurfing/mlcc.html
 C21,Murata,GRM188R61A106ME69D,SMT,0603 10uF 10V X5R 20%; RF supply bulk,https://ds.murata.com/simsurfing/mlcc.html
 C19-C20,,,DNP,RF matching reserves; DO NOT POPULATE,
